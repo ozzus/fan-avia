@@ -1,0 +1,19 @@
+version: "3"
+tasks:
+  up:
+    deps: [run-aggregator, run-airfare, run-match]
+
+  run-aggregator:
+    dir: ./cmd/aggregator-api
+    cmds:
+      - go run ./cmd/main.go --config=./config/local.yaml
+
+  run-airfare:
+    dir: ./cmd/airfare-provider
+    cmds:
+      - go run ./cmd/main.go --config=./config/local.yaml
+
+  run-match:
+    dir: ./cmd/match-apdater
+    cmds:
+      - go run ./cmd/main.go --config=./config/local.yaml

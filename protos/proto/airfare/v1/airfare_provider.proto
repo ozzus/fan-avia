@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package airfare.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/ozzus/fan-avia/protos/gen/go/airfare/v1;airfarev1";
+
+service AirfareProviderService {
+  rpc GetPricesForRules(GetPricesForRulesRequest) returns (GetPricesForRulesResponse);
+}
+
+message GetPricesForRulesRequest {
+  string origin = 1;
+  string destination = 2;
+  uint32 top_n = 3;
+  repeated Rule rules = 4;
+}
+
+message Rule {
+  RuleType type = 1;
+  Direction direction = 2;
+  google.protobuf.Timestamp day_utc = 3;
+  TimeConstraint time_constraint = 4;
+}
+
+enum Direction {
+  DIRECTION_UNSPECIFIED = 0;
+  DIRECTION_OUTBOUND = 1;
+  DIRECTION_RETURN = 2;
+}
+
+enum RuleType {
+  RULE_TYPE_UNSPECIFIED = 0;
+
+  RULE_TYPE_OUT_D_MINUS_2 = 1;
+  RULE_TYPE_OUT_D_MINUS_1 = 2;
+  RULE_TYPE_OUT_ARRIVE_BY = 3;
+
+  RULE_TYPE_RET_DEPART_AFTER = 4;
+  RULE_TYPE_RET_D_PLUS_1 = 5;
+  RULE_TYPE_RET_D_PLUS_2 = 6;
+}
+
+message TimeConstraint {
+  google.protobuf.Timestamp not_after = 1; // прилет не позже (rule 3)
+  google.protobuf.Timestamp not_before = 2; // прилет не раньше (rule 4)
+}
+
+message GetPricesForRulesResponse {
+  repeated RuleResult results = 1;
+}
+
+message RuleResult {
+  string rule_id = 1;
+  repeated PriceOption options = 2; // top_n
+}
+
+message PriceOption {
+  int64 price = 1;
+  string currency = 2;
+  string deeplink = 3;
+}

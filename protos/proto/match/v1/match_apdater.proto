@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package match.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/ozzus/fan-avia/protos/gen/go/match/v1;matchv1";
+
+service MatchAdapterService {
+  rpc GetMatch(GetMatchRequest) returns (GetMatchResponse);
+}
+
+message GetMatchRequest {
+  int64 match_id = 1;
+}
+
+message GetMatchResponse {
+  Match match = 1;
+}
+
+message Match {
+  int64 match_id = 1;
+  google.protobuf.Timestamp kickoff_utc = 2;
+  string city = 3;
+  string stadium = 4;
+  string destination_airport_iata = 5;
+  string club_home_id = 6;
+  string club_away_id = 7;
+}
