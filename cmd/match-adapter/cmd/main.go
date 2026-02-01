@@ -8,9 +8,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ozzus/fan-avia/cmd/airfare-provider/grpcapp"
-	grpcapi "github.com/ozzus/fan-avia/cmd/airfare-provider/internal/api/grpc"
-	"github.com/ozzus/fan-avia/cmd/airfare-provider/internal/config"
+	grpcapi "github.com/ozzus/fan-avia/cmd/match-adapter/internal/api/grpc"
+	"github.com/ozzus/fan-avia/cmd/match-adapter/grpcapp"
+	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -23,7 +23,7 @@ func main() {
 		_ = log.Sync()
 	}()
 
-	log.Info("airfare-provider starting", zap.String("grpc_addr", fmt.Sprintf("%s:%d", cfg.GRPC.Host, cfg.GRPC.Port)))
+	log.Info("match-adapter starting", zap.String("grpc_addr", fmt.Sprintf("%s:%d", cfg.GRPC.Host, cfg.GRPC.Port)))
 
 	app := grpcapp.New(log, cfg.GRPC.Host, cfg.GRPC.Port, func(s *grpc.Server) {
 		grpcapi.Register(s, log)

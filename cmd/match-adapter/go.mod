@@ -1,4 +1,4 @@
-module github.com/ozzus/fan-avia/cmd/airfare-provider
+module github.com/ozzus/fan-avia/cmd/match-adapter
 
 go 1.25.3
 
@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/ozzus/fan-avia/protos v0.0.0
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	google.golang.org/grpc v1.78.0
 )
 

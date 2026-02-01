@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "14268:14268" # HTTP endpoint for spans
+      - "14250:14250" # gRPC endpoint for spans
+  api-gateway:
+    image: chapix/aggregator_api_avia:latest
+    container_name: aggregator-api
+    ports:
+      - "8080:8080" # Внешний порт
+    depends_on:
+      - airfare-provider
+  airfare-provider:
+    image: chapix/airfare-avia:latest
+    container_name: airfare-provider
+    expose:
+      - "44044"
+  match-apdater:
+    image: chapix/match-avia:latest
+    container_name: match-adapter
+    expose:
+      - "44045"

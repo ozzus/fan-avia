@@ -1,10 +1,10 @@
 version: "3"
 tasks:
   up:
-    deps: [run-aggregator, run-airfare, run-match]
+    deps: [run-api, run-airfare, run-match]
 
-  run-aggregator:
-    dir: ./cmd/aggregator-api
+  run-api:
+    dir: ./cmd/api-gateway
     cmds:
       - go run ./cmd/main.go --config=./config/local.yaml
 
@@ -14,6 +14,6 @@ tasks:
       - go run ./cmd/main.go --config=./config/local.yaml
 
   run-match:
-    dir: ./cmd/match-apdater
+    dir: ./cmd/match-adapter
     cmds:
       - go run ./cmd/main.go --config=./config/local.yaml
