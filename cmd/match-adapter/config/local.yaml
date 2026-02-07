@@ -12,8 +12,6 @@ db:
 redis:
   addr: "localhost:6379"
   db: 0
-cache:
-  token_ttl: 30m
 grpc:
   host: "0.0.0.0"
   port: 44045

@@ -11,12 +11,15 @@ import (
 )
 
 type Config struct {
-	Env         string            `yaml:"env" env:"ENV" env-default:"local"`
-	Jaeger      string            `yaml:"jaeger" env:"JAEGER" env-default:"jaeger"`
-	Log         LogConfig         `yaml:"log"`
-	GRPC        GRPCConfig        `yaml:"grpc"`
-	DB          DBConfig          `yaml:"db"`
-	Premierliga PremierligaConfig `yaml:"premierliga"`
+	Env             string            `yaml:"env" env:"ENV" env-default:"local"`
+	RefreshTokenTTL time.Duration     `yaml:"refresh_token_ttl" env:"REFRESH_TOKEN_TTL" env-default:"168h"`
+	MatchCacheTTL   time.Duration     `yaml:"match_cache_ttl" env:"MATCH_CACHE_TTL" env-default:"30m"`
+	Jaeger          string            `yaml:"jaeger" env:"JAEGER" env-default:"jaeger"`
+	Log             LogConfig         `yaml:"log"`
+	GRPC            GRPCConfig        `yaml:"grpc"`
+	Redis           RedisConfig       `yaml:"redis"`
+	DB              DBConfig          `yaml:"db"`
+	Premierliga     PremierligaConfig `yaml:"premierliga"`
 }
 
 type LogConfig struct {
@@ -37,6 +40,12 @@ type DBConfig struct {
 	Password string `yaml:"password" env:"DB_PASSWORD"`
 	Name     string `yaml:"name" env:"DB_NAME"`
 	SSLMode  string `yaml:"sslmode" env:"DB_SSLMODE" env-default:"require"`
+}
+
+type RedisConfig struct {
+	Addr     string `yaml:"addr" env:"REDIS_ADDR" env-default:"localhost:6379"`
+	Password string `yaml:"password" env:"REDIS_PASSWORD"`
+	DB       int    `yaml:"db" env:"REDIS_DB" env-default:"0"`
 }
 
 func (c DBConfig) DatabaseURL() string {

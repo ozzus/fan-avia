@@ -8,7 +8,7 @@ import (
 
 type TokenRepository interface {
 	SaveRefreshToken(ctx context.Context, matchID models.MatchID, refreshToken string) error
-	GetMatchIDByRefreshToken(ctx context.Context, refreshToken string) (string, error)
+	GetMatchIDByRefreshToken(ctx context.Context, refreshToken string) (models.MatchID, error)
 	DeleteRefreshToken(ctx context.Context, matchID models.MatchID, refreshToken string) error
 	AddToBlacklist(ctx context.Context, token string) error
 	IsInBlacklist(ctx context.Context, token string) (bool, error)

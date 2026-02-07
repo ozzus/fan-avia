@@ -18,17 +18,17 @@ type MatchService struct {
 	resolver ports.CityIATAResolver
 	repo     ports.MatchRepository
 	cache    ports.MatchCache
-	tokenTTL time.Duration
+	cacheTTL time.Duration
 }
 
-func NewMatchService(log *zap.Logger, source ports.MatchSource, resolver ports.CityIATAResolver, repo ports.MatchRepository, cache ports.MatchCache, tokenTTL time.Duration) *MatchService {
+func NewMatchService(log *zap.Logger, source ports.MatchSource, resolver ports.CityIATAResolver, repo ports.MatchRepository, cache ports.MatchCache, cacheTTL time.Duration) *MatchService {
 	return &MatchService{
 		log:      log,
 		source:   source,
 		resolver: resolver,
 		repo:     repo,
 		cache:    cache,
-		tokenTTL: tokenTTL,
+		cacheTTL: cacheTTL,
 	}
 }
 
@@ -55,7 +55,7 @@ func (s *MatchService) GetMatch(ctx context.Context, id models.MatchID) (models.
 	if err == nil {
 		logger.Debug("match loaded from db")
 		if s.cache != nil {
-			if err := s.cache.Set(ctx, match, s.tokenTTL); err != nil {
+			if err := s.cache.Set(ctx, match, s.cacheTTL); err != nil {
 				logger.Warn("redis cache write failed", zap.Error(err))
 			}
 		}
@@ -83,7 +83,7 @@ func (s *MatchService) GetMatch(ctx context.Context, id models.MatchID) (models.
 	}
 
 	if s.cache != nil {
-		if err := s.cache.Set(ctx, match, s.tokenTTL); err != nil {
+		if err := s.cache.Set(ctx, match, s.cacheTTL); err != nil {
 			logger.Warn("redis cache write failed", zap.Error(err))
 		}
 	}

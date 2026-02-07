@@ -58,7 +58,7 @@ func main() {
 	}()
 
 	matchCache := matchredis.NewMatchCache(redisClient)
-	matchService := service.NewMatchService(log, matchSource, repo, repo, matchCache, cfg.Cache.TokenTTL)
+	matchService := service.NewMatchService(log, matchSource, repo, repo, matchCache, cfg.MatchCacheTTL)
 
 	grpcApp := grpcapp.New(log, cfg.GRPC.Host, cfg.GRPC.Port, func(s *grpc.Server) {
 		grpcapi.Register(s, log, matchService)
