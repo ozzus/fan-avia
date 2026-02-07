@@ -45,7 +45,12 @@ func main() {
 	defer repo.Close()
 
 	httpClient := &http.Client{Timeout: cfg.Premierliga.Timeout}
-	matchSource := premierliga.NewSource(plclient.NewClient(cfg.Premierliga.BaseURL, httpClient))
+	matchSource := premierliga.NewSource(plclient.NewClient(
+		cfg.Premierliga.BaseURL,
+		httpClient,
+		cfg.Premierliga.RetryMaxAttempts,
+		cfg.Premierliga.RetryBaseInterval,
+	))
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr,
 		Password: cfg.Redis.Password,
