@@ -53,11 +53,11 @@ func parseKickoff(value string) (time.Time, error) {
 
 func normalizeCity(city string) string {
 	switch city {
-	case "Санкт-Петербург":
+	case "\u0421\u0430\u043d\u043a\u0442-\u041f\u0435\u0442\u0435\u0440\u0431\u0443\u0440\u0433":
 		return "Saint Petersburg"
-	case "Москва":
+	case "\u041c\u043e\u0441\u043a\u0432\u0430":
 		return "Moscow"
-	case "Калининград":
+	case "\u041a\u0430\u043b\u0438\u043d\u0438\u043d\u0433\u0440\u0430\u0434":
 		return "Kaliningrad"
 	default:
 		return city
