@@ -8,7 +8,16 @@ db:
   user: "postgres"
   password: "postgres"
   name: "postgres"
+  sslmode: "disable"
+redis:
+  addr: "localhost:6379"
+  db: 0
+cache:
+  token_ttl: 30m
 grpc:
   host: "0.0.0.0"
   port: 44045
+  timeout: 5s
+premierliga:
+  base_url: "http://localhost:8080"
   timeout: 5s

@@ -1,1 +1,7 @@
 env: "dev"
+log:
+  level: "info"
+db:
+  sslmode: "require"
+premierliga:
+  base_url: "http://localhost:8080"

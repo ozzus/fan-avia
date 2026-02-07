@@ -3,44 +3,76 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
-	grpcapi "github.com/ozzus/fan-avia/cmd/match-adapter/internal/api/grpc"
+	"github.com/joho/godotenv"
 	"github.com/ozzus/fan-avia/cmd/match-adapter/grpcapp"
+	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/application/service"
 	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/config"
+	matchdb "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/db/postgres"
+	matchredis "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/db/redis"
+	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/premierliga"
+	plclient "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/premierliga/http/client"
+	grpcapi "github.com/ozzus/fan-avia/cmd/match-adapter/internal/transport/grpc"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 )
 
 func main() {
+	_ = godotenv.Load(".env")
+
 	cfg := config.MustLoad()
 	log := setupLogger(cfg.Log.Level)
 	defer func() {
 		_ = log.Sync()
 	}()
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	log.Info("match-adapter starting", zap.String("grpc_addr", fmt.Sprintf("%s:%d", cfg.GRPC.Host, cfg.GRPC.Port)))
 
-	app := grpcapp.New(log, cfg.GRPC.Host, cfg.GRPC.Port, func(s *grpc.Server) {
-		grpcapi.Register(s, log)
+	repo, err := matchdb.New(ctx, cfg.DB.DatabaseURL())
+	if err != nil {
+		log.Fatal("failed to connect postgres", zap.Error(err))
+	}
+	defer repo.Close()
+
+	httpClient := &http.Client{Timeout: cfg.Premierliga.Timeout}
+	matchSource := premierliga.NewSource(plclient.NewClient(cfg.Premierliga.BaseURL, httpClient))
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     cfg.Redis.Addr,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	})
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Warn("failed to close redis client", zap.Error(err))
+		}
+	}()
+
+	matchCache := matchredis.NewMatchCache(redisClient)
+	matchService := service.NewMatchService(log, matchSource, repo, repo, matchCache, cfg.Cache.TokenTTL)
+
+	grpcApp := grpcapp.New(log, cfg.GRPC.Host, cfg.GRPC.Port, func(s *grpc.Server) {
+		grpcapi.Register(s, log, matchService)
 	})
 
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- app.Run()
+		errCh <- grpcApp.Run()
 	}()
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	select {
 	case <-ctx.Done():
 		log.Info("shutdown signal received")
-		app.Stop()
+		grpcApp.Stop()
 	case err := <-errCh:
 		if err != nil {
 			log.Error("gRPC server stopped", zap.Error(err))
