@@ -73,8 +73,10 @@ func (c DBConfig) DatabaseURL() string {
 }
 
 type PremierligaConfig struct {
-	BaseURL string        `yaml:"base_url" env:"PREMIERLIGA_BASE_URL"`
-	Timeout time.Duration `yaml:"timeout" env:"PREMIERLIGA_TIMEOUT" env-default:"5s"`
+	BaseURL           string        `yaml:"base_url" env:"PREMIERLIGA_BASE_URL"`
+	Timeout           time.Duration `yaml:"timeout" env:"PREMIERLIGA_TIMEOUT" env-default:"5s"`
+	RetryMaxAttempts  int           `yaml:"retry_max_attempts" env:"PREMIERLIGA_RETRY_MAX_ATTEMPTS" env-default:"3"`
+	RetryBaseInterval time.Duration `yaml:"retry_base_interval" env:"PREMIERLIGA_RETRY_BASE_INTERVAL" env-default:"200ms"`
 }
 
 func MustLoad() *Config {
