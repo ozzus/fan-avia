@@ -19,3 +19,5 @@ grpc:
 premierliga:
   base_url: "http://localhost:8080"
   timeout: 5s
+  retry_max_attempts: 3
+  retry_base_interval: 200ms
