@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/ozzus/fan-avia/cmd/match-adapter/grpcapp"
@@ -15,6 +16,7 @@ import (
 	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/config"
 	matchdb "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/db/postgres"
 	matchredis "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/db/redis"
+	matchtracing "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/db/tracing"
 	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/premierliga"
 	plclient "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/premierliga/http/client"
 	grpcapi "github.com/ozzus/fan-avia/cmd/match-adapter/internal/transport/grpc"
@@ -31,6 +33,18 @@ func main() {
 	log := setupLogger(cfg.Log.Level)
 	defer func() {
 		_ = log.Sync()
+	}()
+
+	tp, err := matchtracing.InitTracer("match-adapter", cfg.Jaeger)
+	if err != nil {
+		log.Fatal("failed to init tracer", zap.Error(err))
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := tp.Shutdown(shutdownCtx); err != nil {
+			log.Warn("failed to shutdown tracer provider", zap.Error(err))
+		}
 	}()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
