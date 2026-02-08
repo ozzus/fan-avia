@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	derr "github.com/ozzus/fan-avia/cmd/match-adapter/internal/domain/errors"
@@ -93,7 +95,10 @@ func (c *Client) getFullDataMatchOnce(ctx context.Context, payload []byte) (dto.
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		if resp.StatusCode == http.StatusNotFound {
-			return dto.GetFullDataMatchResponse{}, derr.ErrMatchNotFound
+			if isFullDataMatchEndpoint(c.baseURL) {
+				return dto.GetFullDataMatchResponse{}, derr.ErrMatchNotFound
+			}
+			return dto.GetFullDataMatchResponse{}, fmt.Errorf("%w: endpoint not found: %s", derr.ErrSourceUnavailable, c.baseURL)
 		}
 		if resp.StatusCode >= http.StatusInternalServerError || resp.StatusCode == http.StatusTooManyRequests {
 			return dto.GetFullDataMatchResponse{}, fmt.Errorf("%w: unexpected status: %s", derr.ErrSourceUnavailable, resp.Status)
@@ -107,4 +112,14 @@ func (c *Client) getFullDataMatchOnce(ctx context.Context, payload []byte) (dto.
 	}
 
 	return dtoResp, nil
+}
+
+func isFullDataMatchEndpoint(baseURL string) bool {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return false
+	}
+
+	path := strings.TrimSuffix(strings.TrimSpace(u.Path), "/")
+	return path == "/api/getFullDataMatch"
 }

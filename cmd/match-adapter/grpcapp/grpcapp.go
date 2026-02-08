@@ -6,11 +6,14 @@ import (
 	"net"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
@@ -26,6 +29,7 @@ func New(log *zap.Logger, host string, port int, register func(*grpc.Server)) *G
 
 	gRPCServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			tracingInterceptor(),
 			recoveryInterceptor(log),
 			loggingInterceptor(log),
 		),
@@ -44,6 +48,43 @@ func New(log *zap.Logger, host string, port int, register func(*grpc.Server)) *G
 		gRPCServer: gRPCServer,
 		addr:       addr,
 	}
+}
+
+func tracingInterceptor() grpc.UnaryServerInterceptor {
+	tracer := otel.Tracer("match-adapter/grpc")
+
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if md, ok := metadata.FromIncomingContext(ctx); ok {
+			ctx = otel.GetTextMapPropagator().Extract(ctx, metadataCarrier(md))
+		}
+
+		ctx, span := tracer.Start(ctx, info.FullMethod, trace.WithSpanKind(trace.SpanKindServer))
+		defer span.End()
+
+		return handler(ctx, req)
+	}
+}
+
+type metadataCarrier metadata.MD
+
+func (c metadataCarrier) Get(key string) string {
+	values := metadata.MD(c).Get(key)
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
+}
+
+func (c metadataCarrier) Set(key, value string) {
+	metadata.MD(c).Set(key, value)
+}
+
+func (c metadataCarrier) Keys() []string {
+	keys := make([]string, 0, len(c))
+	for k := range c {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 func (a *GrpcApp) Run() error {
