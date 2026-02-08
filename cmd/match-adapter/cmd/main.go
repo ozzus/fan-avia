@@ -14,7 +14,7 @@ import (
 	"github.com/ozzus/fan-avia/cmd/match-adapter/grpcapp"
 	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/application/service"
 	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/config"
-	matchdb "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/db/postgres"
+	matchdb "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/db/postgres/repo"
 	matchredis "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/db/redis"
 	matchtracing "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/db/tracing"
 	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/premierliga"

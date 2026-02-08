@@ -9,8 +9,8 @@ import (
 	"syscall"
 
 	"github.com/ozzus/fan-avia/cmd/airfare-provider/grpcapp"
-	grpcapi "github.com/ozzus/fan-avia/cmd/airfare-provider/internal/api/grpc"
 	"github.com/ozzus/fan-avia/cmd/airfare-provider/internal/config"
+	grpcapi "github.com/ozzus/fan-avia/cmd/airfare-provider/internal/transport/grpc"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"

@@ -39,5 +39,10 @@ func (s *Source) FetchByID(ctx context.Context, id models.MatchID) (models.Match
 		return models.Match{}, fmt.Errorf("get full data match: %w", err)
 	}
 
-	return mappers.ToDomainMatch(resp)
+	match, err := mappers.ToDomainMatch(resp)
+	if err != nil {
+		return models.Match{}, err
+	}
+
+	return match, nil
 }
