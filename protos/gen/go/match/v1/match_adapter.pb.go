@@ -119,6 +119,7 @@ type Match struct {
 	DestinationAirportIata string                 `protobuf:"bytes,5,opt,name=destination_airport_iata,json=destinationAirportIata,proto3" json:"destination_airport_iata,omitempty"`
 	ClubHomeId             string                 `protobuf:"bytes,6,opt,name=club_home_id,json=clubHomeId,proto3" json:"club_home_id,omitempty"`
 	ClubAwayId             string                 `protobuf:"bytes,7,opt,name=club_away_id,json=clubAwayId,proto3" json:"club_away_id,omitempty"`
+	TicketsLink            string                 `protobuf:"bytes,8,opt,name=tickets_link,json=ticketsLink,proto3" json:"tickets_link,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -202,6 +203,13 @@ func (x *Match) GetClubAwayId() string {
 	return ""
 }
 
+func (x *Match) GetTicketsLink() string {
+	if x != nil {
+		return x.TicketsLink
+	}
+	return ""
+}
+
 var File_match_v1_match_adapter_proto protoreflect.FileDescriptor
 
 const file_match_v1_match_adapter_proto_rawDesc = "" +
@@ -210,7 +218,7 @@ const file_match_v1_match_adapter_proto_rawDesc = "" +
 	"\x0fGetMatchRequest\x12\x19\n" +
 	"\bmatch_id\x18\x01 \x01(\x03R\amatchId\"9\n" +
 	"\x10GetMatchResponse\x12%\n" +
-	"\x05match\x18\x01 \x01(\v2\x0f.match.v1.MatchR\x05match\"\x8b\x02\n" +
+	"\x05match\x18\x01 \x01(\v2\x0f.match.v1.MatchR\x05match\"\xae\x02\n" +
 	"\x05Match\x12\x19\n" +
 	"\bmatch_id\x18\x01 \x01(\x03R\amatchId\x12;\n" +
 	"\vkickoff_utc\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
@@ -221,7 +229,8 @@ const file_match_v1_match_adapter_proto_rawDesc = "" +
 	"\fclub_home_id\x18\x06 \x01(\tR\n" +
 	"clubHomeId\x12 \n" +
 	"\fclub_away_id\x18\a \x01(\tR\n" +
-	"clubAwayId2X\n" +
+	"clubAwayId\x12!\n" +
+	"\ftickets_link\x18\b \x01(\tR\vticketsLink2X\n" +
 	"\x13MatchAdapterService\x12A\n" +
 	"\bGetMatch\x12\x19.match.v1.GetMatchRequest\x1a\x1a.match.v1.GetMatchResponseB:Z8github.com/ozzus/fan-avia/protos/gen/go/match/v1;matchv1b\x06proto3"
 

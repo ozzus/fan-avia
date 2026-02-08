@@ -26,4 +26,5 @@ message Match {
   string destination_airport_iata = 5;
   string club_home_id = 6;
   string club_away_id = 7;
+  string tickets_link = 8;
 }
