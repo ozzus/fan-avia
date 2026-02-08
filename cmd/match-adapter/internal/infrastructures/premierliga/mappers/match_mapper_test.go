@@ -13,7 +13,7 @@ func TestToDomainMatch_NormalizesCityAndClubIDs(t *testing.T) {
 	resp := dto.GetFullDataMatchResponse{
 		ID:          1,
 		Date:        "2026-02-07T15:30:00Z",
-		City:        "Москва",
+		City:        "\u041c\u043e\u0441\u043a\u0432\u0430",
 		Stadium:     "Luzhniki",
 		TicketsLink: "https://tickets.test/match/1",
 		ClubHome:    &homeID,
