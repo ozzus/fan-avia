@@ -17,7 +17,7 @@ grpc:
   port: 44045
   timeout: 5s
 premierliga:
-  base_url: "http://localhost:8080"
+  base_url: "https://api.premierliga.ru/api/getFullDataMatch"
   timeout: 5s
   retry_max_attempts: 3
   retry_base_interval: 200ms
