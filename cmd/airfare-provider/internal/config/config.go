@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -9,11 +10,15 @@ import (
 )
 
 type Config struct {
-	Env    string     `yaml:"env" env:"ENV" env-default:"local"`
-	Jaeger string     `yaml:"jaeger" env:"JAEGER" env-default:"jaeger"`
-	Log    LogConfig  `yaml:"log"`
-	GRPC   GRPCConfig `yaml:"grpc"`
-	DB     DBConfig   `yaml:"db"`
+	Env             string              `yaml:"env" env:"ENV" env-default:"local"`
+	Jaeger          string              `yaml:"jaeger" env:"JAEGER" env-default:"jaeger"`
+	AirfareCacheTTL time.Duration       `yaml:"airfare_cache_ttl" env:"AIRFARE_CACHE_TTL" env-default:"30m"`
+	Log             LogConfig           `yaml:"log"`
+	GRPC            GRPCConfig          `yaml:"grpc"`
+	DB              DBConfig            `yaml:"db"`
+	Redis           RedisConfig         `yaml:"redis"`
+	MatchAdapter    MatchAdapterConfig  `yaml:"match_adapter"`
+	Travelpayouts   TravelpayoutsConfig `yaml:"travelpayouts"`
 }
 
 type LogConfig struct {
@@ -32,6 +37,30 @@ type DBConfig struct {
 	User     string `yaml:"user" env:"DB_USER"`
 	Password string `yaml:"password" env:"DB_PASSWORD"`
 	Name     string `yaml:"name" env:"DB_NAME"`
+}
+
+type RedisConfig struct {
+	Addr     string `yaml:"addr" env:"REDIS_ADDR" env-default:"localhost:6379"`
+	Password string `yaml:"password" env:"REDIS_PASSWORD"`
+	DB       int    `yaml:"db" env:"REDIS_DB" env-default:"0"`
+}
+
+type MatchAdapterConfig struct {
+	Host    string        `yaml:"host" env:"MATCH_ADAPTER_HOST" env-default:"localhost"`
+	Port    int           `yaml:"port" env:"MATCH_ADAPTER_PORT" env-default:"44045"`
+	Timeout time.Duration `yaml:"timeout" env:"MATCH_ADAPTER_TIMEOUT" env-default:"3s"`
+}
+
+type TravelpayoutsConfig struct {
+	BaseURL  string        `yaml:"base_url" env:"TRAVELPAYOUTS_BASE_URL" env-default:"https://api.travelpayouts.com"`
+	Token    string        `yaml:"token" env:"TRAVELPAYOUTS_TOKEN"`
+	Currency string        `yaml:"currency" env:"TRAVELPAYOUTS_CURRENCY" env-default:"rub"`
+	Limit    int           `yaml:"limit" env:"TRAVELPAYOUTS_LIMIT" env-default:"30"`
+	Timeout  time.Duration `yaml:"timeout" env:"TRAVELPAYOUTS_TIMEOUT" env-default:"5s"`
+}
+
+func (c MatchAdapterConfig) Address() string {
+	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
 func MustLoad() *Config {
