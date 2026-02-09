@@ -2,6 +2,7 @@ env: "dev"
 redis:
   addr: "redis:6379"
   db: 0
+jaeger: "jaeger:14268"
 airfare_cache_ttl: 30m
 match_adapter:
   host: "match-adapter"
