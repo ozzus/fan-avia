@@ -8,6 +8,7 @@ option go_package = "github.com/ozzus/fan-avia/protos/gen/go/airfare/v1;airfarev
 
 service AirfareProviderService {
   rpc GetPricesForRules(GetPricesForRulesRequest) returns (GetPricesForRulesResponse);
+  rpc GetAirfareByMatch(GetAirfareByMatchRequest) returns (GetAirfareByMatchResponse);
 }
 
 message GetPricesForRulesRequest {
@@ -60,4 +61,38 @@ message PriceOption {
   int64 price = 1;
   string currency = 2;
   string deeplink = 3;
+}
+
+message GetAirfareByMatchRequest {
+  int64 match_id = 1;
+  string origin_iata = 2;
+}
+
+message GetAirfareByMatchResponse {
+  int64 match_id = 1;
+  string tickets_link = 2;
+  repeated FareSlot slots = 3;
+}
+
+message FareSlot {
+  FareSlotType slot = 1;
+  FareDirection direction = 2;
+  string date = 3; // YYYY-MM-DD (UTC)
+  repeated int64 prices = 4;
+}
+
+enum FareDirection {
+  FARE_DIRECTION_UNSPECIFIED = 0;
+  FARE_DIRECTION_OUTBOUND = 1;
+  FARE_DIRECTION_RETURN = 2;
+}
+
+enum FareSlotType {
+  FARE_SLOT_UNSPECIFIED = 0;
+  FARE_SLOT_OUT_D_MINUS_2 = 1;
+  FARE_SLOT_OUT_D_MINUS_1 = 2;
+  FARE_SLOT_OUT_D0_ARRIVE_BY = 3;
+  FARE_SLOT_RET_D0_DEPART_AFTER = 4;
+  FARE_SLOT_RET_D_PLUS_1 = 5;
+  FARE_SLOT_RET_D_PLUS_2 = 6;
 }
