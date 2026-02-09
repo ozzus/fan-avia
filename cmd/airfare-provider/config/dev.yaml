@@ -1,1 +1,14 @@
 env: "dev"
+redis:
+  addr: "redis:6379"
+  db: 0
+airfare_cache_ttl: 30m
+match_adapter:
+  host: "match-adapter"
+  port: 44045
+  timeout: 3s
+travelpayouts:
+  base_url: "https://api.travelpayouts.com"
+  currency: "rub"
+  limit: 30
+  timeout: 5s
