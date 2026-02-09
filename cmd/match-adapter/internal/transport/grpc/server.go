@@ -57,6 +57,7 @@ func (s *serverAPI) GetMatch(ctx context.Context, req *matchv1.GetMatchRequest) 
 			DestinationAirportIata: m.DestinationIATA,
 			ClubHomeId:             m.HomeTeam,
 			ClubAwayId:             m.AwayTeam,
+			TicketsLink:            m.TicketsLink,
 		},
 	}, nil
 }
