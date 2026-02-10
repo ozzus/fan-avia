@@ -12,8 +12,8 @@ service AirfareProviderService {
 }
 
 message GetPricesForRulesRequest {
-  string origin = 1;
-  string destination = 2;
+  string origin_iata = 1;
+  string destination_iata = 2;
   uint32 top_n = 3;
   repeated Rule rules = 4;
 }

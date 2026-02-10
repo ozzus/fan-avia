@@ -243,13 +243,13 @@ func (FareSlotType) EnumDescriptor() ([]byte, []int) {
 }
 
 type GetPricesForRulesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Origin        string                 `protobuf:"bytes,1,opt,name=origin,proto3" json:"origin,omitempty"`
-	Destination   string                 `protobuf:"bytes,2,opt,name=destination,proto3" json:"destination,omitempty"`
-	TopN          uint32                 `protobuf:"varint,3,opt,name=top_n,json=topN,proto3" json:"top_n,omitempty"`
-	Rules         []*Rule                `protobuf:"bytes,4,rep,name=rules,proto3" json:"rules,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	OriginIata      string                 `protobuf:"bytes,1,opt,name=origin_iata,json=originIata,proto3" json:"origin_iata,omitempty"`
+	DestinationIata string                 `protobuf:"bytes,2,opt,name=destination_iata,json=destinationIata,proto3" json:"destination_iata,omitempty"`
+	TopN            uint32                 `protobuf:"varint,3,opt,name=top_n,json=topN,proto3" json:"top_n,omitempty"`
+	Rules           []*Rule                `protobuf:"bytes,4,rep,name=rules,proto3" json:"rules,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetPricesForRulesRequest) Reset() {
@@ -282,16 +282,16 @@ func (*GetPricesForRulesRequest) Descriptor() ([]byte, []int) {
 	return file_airfare_v1_airfare_provider_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetPricesForRulesRequest) GetOrigin() string {
+func (x *GetPricesForRulesRequest) GetOriginIata() string {
 	if x != nil {
-		return x.Origin
+		return x.OriginIata
 	}
 	return ""
 }
 
-func (x *GetPricesForRulesRequest) GetDestination() string {
+func (x *GetPricesForRulesRequest) GetDestinationIata() string {
 	if x != nil {
-		return x.Destination
+		return x.DestinationIata
 	}
 	return ""
 }
@@ -771,10 +771,11 @@ var File_airfare_v1_airfare_provider_proto protoreflect.FileDescriptor
 const file_airfare_v1_airfare_provider_proto_rawDesc = "" +
 	"\n" +
 	"!airfare/v1/airfare_provider.proto\x12\n" +
-	"airfare.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x91\x01\n" +
-	"\x18GetPricesForRulesRequest\x12\x16\n" +
-	"\x06origin\x18\x01 \x01(\tR\x06origin\x12 \n" +
-	"\vdestination\x18\x02 \x01(\tR\vdestination\x12\x13\n" +
+	"airfare.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa3\x01\n" +
+	"\x18GetPricesForRulesRequest\x12\x1f\n" +
+	"\vorigin_iata\x18\x01 \x01(\tR\n" +
+	"originIata\x12)\n" +
+	"\x10destination_iata\x18\x02 \x01(\tR\x0fdestinationIata\x12\x13\n" +
 	"\x05top_n\x18\x03 \x01(\rR\x04topN\x12&\n" +
 	"\x05rules\x18\x04 \x03(\v2\x10.airfare.v1.RuleR\x05rules\"\xdf\x01\n" +
 	"\x04Rule\x12(\n" +
