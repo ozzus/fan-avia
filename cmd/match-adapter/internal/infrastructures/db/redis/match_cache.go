@@ -43,8 +43,11 @@ func (c *MatchCache) Set(ctx context.Context, match models.Match, ttl time.Durat
 		return nil
 	}
 
+	normalized := match
+	normalized.KickoffUTC = normalized.KickoffUTC.UTC()
+
 	key := fmt.Sprintf("match:%s", match.ID)
-	data, err := json.Marshal(match)
+	data, err := json.Marshal(normalized)
 	if err != nil {
 		return fmt.Errorf("marshal match for cache: %w", err)
 	}
