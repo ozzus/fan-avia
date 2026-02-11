@@ -8,6 +8,10 @@ import (
 
 	derr "github.com/ozzus/fan-avia/cmd/airfare-provider/internal/domain/errors"
 	"github.com/ozzus/fan-avia/cmd/airfare-provider/internal/domain/ports"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	otelcodes "go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -35,6 +39,13 @@ func NewAirfareService(log *zap.Logger, matchReader ports.MatchReader, fareSourc
 
 func (s *AirfareService) GetAirfareByMatch(ctx context.Context, matchID int64, originIATA string) (ports.AirfareByMatch, error) {
 	const op = "service.GetAirfareByMatch"
+	tracer := otel.Tracer("airfare-provider/service")
+	ctx, span := tracer.Start(ctx, op)
+	defer span.End()
+	span.SetAttributes(
+		attribute.Int64("airfare.match_id", matchID),
+		attribute.String("airfare.origin_iata", strings.ToUpper(strings.TrimSpace(originIATA))),
+	)
 
 	logger := s.log.With(
 		zap.String("op", op),
@@ -44,10 +55,12 @@ func (s *AirfareService) GetAirfareByMatch(ctx context.Context, matchID int64, o
 
 	if matchID <= 0 {
 		logger.Warn("invalid match_id")
+		span.SetStatus(otelcodes.Error, "invalid match_id")
 		return ports.AirfareByMatch{}, derr.ErrMatchNotFound
 	}
 	if strings.TrimSpace(originIATA) == "" {
 		logger.Warn("invalid origin_iata")
+		span.SetStatus(otelcodes.Error, "invalid origin_iata")
 		return ports.AirfareByMatch{}, derr.ErrInvalidOrigin
 	}
 
@@ -55,19 +68,24 @@ func (s *AirfareService) GetAirfareByMatch(ctx context.Context, matchID int64, o
 		cached, err := s.cache.GetByMatchAndOrigin(ctx, matchID, originIATA)
 		if err == nil {
 			logger.Info("airfare cache hit")
+			span.AddEvent("airfare.cache.hit")
 			return cached, nil
 		}
 		if errors.Is(err, derr.ErrAirfareNotFound) {
 			logger.Info("airfare cache miss")
+			span.AddEvent("airfare.cache.miss")
 		}
 		if !errors.Is(err, derr.ErrAirfareNotFound) {
 			logger.Warn("redis cache read failed", zap.Error(err))
+			span.RecordError(err)
 		}
 	}
 
 	match, err := s.matchReader.GetMatch(ctx, matchID)
 	if err != nil {
 		logger.Warn("failed to load match snapshot", zap.Error(err))
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, "failed to load match snapshot")
 		return ports.AirfareByMatch{}, err
 	}
 
@@ -97,11 +115,17 @@ func (s *AirfareService) GetAirfareByMatch(ctx context.Context, matchID int64, o
 					zap.String("slot_kind", slotKindToString(result.Slots[i].Kind)),
 					zap.Error(err),
 				)
+				span.AddEvent(
+					"airfare.source.slot_error",
+					trace.WithAttributes(attribute.String("airfare.slot_kind", slotKindToString(result.Slots[i].Kind))),
+				)
+				span.RecordError(err)
 				continue
 			}
 			result.Slots[i].Prices = prices
 		}
 		if sourceFailures == len(result.Slots) {
+			span.SetStatus(otelcodes.Error, "all source calls failed")
 			return ports.AirfareByMatch{}, derr.ErrSourceTemporary
 		}
 	}
@@ -109,9 +133,12 @@ func (s *AirfareService) GetAirfareByMatch(ctx context.Context, matchID int64, o
 	if s.cache != nil {
 		if err := s.cache.SetByMatchAndOrigin(ctx, matchID, originIATA, result, s.cacheTTL); err != nil {
 			logger.Warn("redis cache write failed", zap.Error(err))
+			span.RecordError(err)
 		}
 	}
 
+	span.SetAttributes(attribute.Int("airfare.slots_count", len(result.Slots)))
+	span.SetStatus(otelcodes.Ok, "ok")
 	logger.Info("airfare slots built", zap.Int("slots_count", len(result.Slots)))
 	return result, nil
 }

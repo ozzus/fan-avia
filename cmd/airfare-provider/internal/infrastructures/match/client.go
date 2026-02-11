@@ -9,6 +9,9 @@ import (
 	derr "github.com/ozzus/fan-avia/cmd/airfare-provider/internal/domain/errors"
 	"github.com/ozzus/fan-avia/cmd/airfare-provider/internal/domain/ports"
 	matchv1 "github.com/ozzus/fan-avia/protos/gen/go/match/v1"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	otelcodes "go.opentelemetry.io/otel/codes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -30,11 +33,18 @@ func NewClient(client matchv1.MatchAdapterServiceClient, timeout time.Duration) 
 }
 
 func (c *Client) GetMatch(ctx context.Context, matchID int64) (ports.MatchSnapshot, error) {
+	tracer := otel.Tracer("airfare-provider/match-client")
+	ctx, span := tracer.Start(ctx, "match.client.GetMatch")
+	defer span.End()
+	span.SetAttributes(attribute.Int64("airfare.match_id", matchID))
+
 	reqCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
 	resp, err := c.client.GetMatch(reqCtx, &matchv1.GetMatchRequest{MatchId: matchID})
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, "match-adapter request failed")
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return ports.MatchSnapshot{}, err
 		}
@@ -52,8 +62,13 @@ func (c *Client) GetMatch(ctx context.Context, matchID int64) (ports.MatchSnapsh
 
 	match := resp.GetMatch()
 	if match == nil || match.GetKickoffUtc() == nil {
-		return ports.MatchSnapshot{}, fmt.Errorf("match-adapter returned incomplete payload")
+		err := fmt.Errorf("match-adapter returned incomplete payload")
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, "incomplete payload")
+		return ports.MatchSnapshot{}, err
 	}
+
+	span.SetStatus(otelcodes.Ok, "ok")
 
 	return ports.MatchSnapshot{
 		MatchID:         match.GetMatchId(),

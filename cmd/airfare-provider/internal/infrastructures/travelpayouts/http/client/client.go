@@ -13,6 +13,9 @@ import (
 	"github.com/ozzus/fan-avia/cmd/airfare-provider/internal/domain/ports"
 	"github.com/ozzus/fan-avia/cmd/airfare-provider/internal/infrastructures/travelpayouts/dto"
 	"github.com/ozzus/fan-avia/cmd/airfare-provider/internal/infrastructures/travelpayouts/mappers"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	otelcodes "go.opentelemetry.io/otel/codes"
 )
 
 type Client struct {
@@ -47,36 +50,65 @@ func NewClient(baseURL, token, currency string, limit int, timeout time.Duration
 }
 
 func (c *Client) GetPrices(ctx context.Context, search ports.FareSearch) ([]int64, error) {
+	tracer := otel.Tracer("airfare-provider/travelpayouts-client")
+	ctx, span := tracer.Start(ctx, "travelpayouts.client.GetPrices")
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("airfare.origin_iata", strings.ToUpper(strings.TrimSpace(search.OriginIATA))),
+		attribute.String("airfare.destination_iata", strings.ToUpper(strings.TrimSpace(search.DestinationIATA))),
+		attribute.String("airfare.date_utc", search.DateUTC.UTC().Format("2006-01-02")),
+	)
+
 	if strings.TrimSpace(c.token) == "" {
-		return nil, fmt.Errorf("travelpayouts token is empty")
+		err := fmt.Errorf("travelpayouts token is empty")
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, "empty token")
+		return nil, err
 	}
 
 	reqURL, err := c.buildURL(search)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, "failed to build url")
 		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("build request: %w", err)
+		wrapped := fmt.Errorf("build request: %w", err)
+		span.RecordError(wrapped)
+		span.SetStatus(otelcodes.Error, "failed to build request")
+		return nil, wrapped
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("travelpayouts request: %w", err)
+		wrapped := fmt.Errorf("travelpayouts request: %w", err)
+		span.RecordError(wrapped)
+		span.SetStatus(otelcodes.Error, "request failed")
+		return nil, wrapped
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return nil, fmt.Errorf("travelpayouts status: %s", resp.Status)
+		err := fmt.Errorf("travelpayouts status: %s", resp.Status)
+		span.RecordError(err)
+		span.SetStatus(otelcodes.Error, "non-2xx response")
+		return nil, err
 	}
 
 	var payload dto.PriceForDatesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return nil, fmt.Errorf("decode travelpayouts response: %w", err)
+		wrapped := fmt.Errorf("decode travelpayouts response: %w", err)
+		span.RecordError(wrapped)
+		span.SetStatus(otelcodes.Error, "decode failed")
+		return nil, wrapped
 	}
 
-	return mappers.ExtractPrices(payload.Data, search), nil
+	prices := mappers.ExtractPrices(payload.Data, search)
+	span.SetAttributes(attribute.Int("airfare.prices_count", len(prices)))
+	span.SetStatus(otelcodes.Ok, "ok")
+	return prices, nil
 }
 
 func (c *Client) buildURL(search ports.FareSearch) (string, error) {
