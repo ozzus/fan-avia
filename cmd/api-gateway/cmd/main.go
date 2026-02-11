@@ -10,9 +10,16 @@ import (
 	"syscall"
 	"time"
 
+	apihandlers "github.com/ozzus/fan-avia/cmd/api-gateway/internal/api/http/handlers"
+	airfareclient "github.com/ozzus/fan-avia/cmd/api-gateway/internal/clients/airfare"
+	matchclient "github.com/ozzus/fan-avia/cmd/api-gateway/internal/clients/match"
 	"github.com/ozzus/fan-avia/cmd/api-gateway/internal/config"
+	airfarev1 "github.com/ozzus/fan-avia/protos/gen/go/airfare/v1"
+	matchv1 "github.com/ozzus/fan-avia/protos/gen/go/match/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -25,9 +32,48 @@ func main() {
 	addr := fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port)
 	log.Info("api-gateway starting", zap.String("http_addr", addr))
 
+	airfareConn, err := grpc.NewClient(cfg.Clients.Airfare.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal("failed to connect airfare-provider grpc", zap.Error(err), zap.String("addr", cfg.Clients.Airfare.Address))
+	}
+	defer func() {
+		if closeErr := airfareConn.Close(); closeErr != nil {
+			log.Warn("failed to close airfare-provider grpc client", zap.Error(closeErr))
+		}
+	}()
+
+	airfareClient := airfareclient.NewClient(
+		airfarev1.NewAirfareProviderServiceClient(airfareConn),
+		cfg.Clients.Airfare.Timeout,
+	)
+	matchConn, err := grpc.NewClient(cfg.Clients.Match.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal("failed to connect match-adapter grpc", zap.Error(err), zap.String("addr", cfg.Clients.Match.Address))
+	}
+	defer func() {
+		if closeErr := matchConn.Close(); closeErr != nil {
+			log.Warn("failed to close match-adapter grpc client", zap.Error(closeErr))
+		}
+	}()
+	matchClient := matchclient.NewClient(
+		matchv1.NewMatchAdapterServiceClient(matchConn),
+		cfg.Clients.Match.Timeout,
+	)
+
+	airfareHandler := apihandlers.NewAirfareHandler(log, airfareClient, cfg.Clients.Airfare.Timeout)
+	matchHandler := apihandlers.NewMatchHandler(log, matchClient, cfg.Clients.Match.Timeout)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthHandler)
 	mux.HandleFunc("/v1/stub", stubHandler(log))
+	mux.HandleFunc("/v1/matches", matchHandler.GetMatches)
+	mux.HandleFunc("/v1/matches/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/airfare") {
+			airfareHandler.GetAirfareByMatch(w, r)
+			return
+		}
+		matchHandler.GetMatch(w, r)
+	})
 
 	server := &http.Server{
 		Addr:         addr,
