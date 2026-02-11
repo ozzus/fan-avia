@@ -1,0 +1,295 @@
+openapi: 3.0.3
+info:
+  title: Fan Avia API
+  version: 1.0.0
+
+paths:
+  /v1/matches:
+    get:
+      summary: Get matches by ids
+      description: Returns a list of match objects by comma-separated ids.
+      parameters:
+        - in: query
+          name: ids
+          required: true
+          schema:
+            type: string
+          description: Comma-separated match ids, e.g. `16114,16115`
+      responses:
+        "200":
+          description: Matches response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetMatchesResponse"
+              example:
+                matches:
+                  - match_id: "16114"
+                    kickoff_utc: "2026-02-27T19:30:00Z"
+                    city: "Saint Petersburg"
+                    stadium: "Газпром Арена"
+                    destination_airport_iata: "LED"
+                    club_home_id: "3"
+                    club_away_id: "444"
+                    tickets_link: "https://tickets.fc-zenit.ru/football/tickets/#zenit"
+        "400":
+          description: Invalid request params
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "ids query is required, example: /v1/matches?ids=16114,16115"
+        "502":
+          description: Upstream source error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "match adapter error"
+
+  /v1/matches/{match_id}:
+    get:
+      summary: Get match by id
+      parameters:
+        - in: path
+          name: match_id
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        "200":
+          description: Match response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match"
+              example:
+                match_id: "16114"
+                kickoff_utc: "2026-02-27T19:30:00Z"
+                city: "Saint Petersburg"
+                stadium: "Газпром Арена"
+                destination_airport_iata: "LED"
+                club_home_id: "3"
+                club_away_id: "444"
+                tickets_link: "https://tickets.fc-zenit.ru/football/tickets/#zenit"
+        "400":
+          description: Invalid request params
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "invalid match id"
+        "502":
+          description: Upstream source error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "match adapter error"
+
+  /v1/matches/{match_id}/airfare:
+    get:
+      summary: Get airfare slots by match
+      description: Returns 6 airfare slots around match date and tickets link.
+      parameters:
+        - in: path
+          name: match_id
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          description: Match ID
+        - in: query
+          name: origin_iata
+          required: true
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 3
+            pattern: "^[A-Za-z]{3}$"
+          description: Origin city/airport IATA code (e.g. MOW)
+      responses:
+        "200":
+          description: Airfare slots response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAirfareByMatchResponse"
+              example:
+                matchId: "16114"
+                ticketsLink: "https://tickets.fc-zenit.ru/football/tickets/#zenit"
+                slots:
+                  - slot: FARE_SLOT_OUT_D_MINUS_2
+                    direction: FARE_DIRECTION_OUTBOUND
+                    date: "2026-02-25"
+                    prices: [2511]
+                  - slot: FARE_SLOT_OUT_D_MINUS_1
+                    direction: FARE_DIRECTION_OUTBOUND
+                    date: "2026-02-26"
+                    prices: [2854]
+                  - slot: FARE_SLOT_OUT_D0_ARRIVE_BY
+                    direction: FARE_DIRECTION_OUTBOUND
+                    date: "2026-02-27"
+                    prices: [3276]
+                  - slot: FARE_SLOT_RET_D0_DEPART_AFTER
+                    direction: FARE_DIRECTION_RETURN
+                    date: "2026-02-27"
+                    prices: []
+                  - slot: FARE_SLOT_RET_D_PLUS_1
+                    direction: FARE_DIRECTION_RETURN
+                    date: "2026-02-28"
+                    prices: [3354]
+                  - slot: FARE_SLOT_RET_D_PLUS_2
+                    direction: FARE_DIRECTION_RETURN
+                    date: "2026-03-01"
+                    prices: [4480]
+        "400":
+          description: Invalid request params
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "origin_iata is required"
+        "404":
+          description: Match not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "match not found"
+        "503":
+          description: Upstream source unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "source temporarily unavailable"
+        "504":
+          description: Upstream timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "deadline exceeded"
+
+components:
+  schemas:
+    Match:
+      type: object
+      properties:
+        match_id:
+          type: string
+        kickoff_utc:
+          type: string
+          format: date-time
+        city:
+          type: string
+        stadium:
+          type: string
+        destination_airport_iata:
+          type: string
+        club_home_id:
+          type: string
+        club_away_id:
+          type: string
+        tickets_link:
+          type: string
+          format: uri
+
+    GetMatchesResponse:
+      type: object
+      required:
+        - matches
+      properties:
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/Match"
+        errors:
+          type: array
+          description: Per-id errors for failed lookups when partial success is returned.
+          items:
+            $ref: "#/components/schemas/MatchLoadError"
+
+    MatchLoadError:
+      type: object
+      required:
+        - match_id
+        - error
+      properties:
+        match_id:
+          type: integer
+          format: int64
+        error:
+          type: string
+
+    GetAirfareByMatchResponse:
+      type: object
+      required:
+        - matchId
+        - ticketsLink
+        - slots
+      properties:
+        matchId:
+          type: string
+          description: Match ID as string (gateway mirrors gRPC JSON)
+        ticketsLink:
+          type: string
+          format: uri
+        slots:
+          type: array
+          minItems: 6
+          maxItems: 6
+          items:
+            $ref: "#/components/schemas/FareSlot"
+
+    FareSlot:
+      type: object
+      required:
+        - slot
+        - direction
+        - date
+        - prices
+      properties:
+        slot:
+          type: string
+          enum:
+            - FARE_SLOT_OUT_D_MINUS_2
+            - FARE_SLOT_OUT_D_MINUS_1
+            - FARE_SLOT_OUT_D0_ARRIVE_BY
+            - FARE_SLOT_RET_D0_DEPART_AFTER
+            - FARE_SLOT_RET_D_PLUS_1
+            - FARE_SLOT_RET_D_PLUS_2
+        direction:
+          type: string
+          enum:
+            - FARE_DIRECTION_OUTBOUND
+            - FARE_DIRECTION_RETURN
+        date:
+          type: string
+          format: date
+          description: UTC date in YYYY-MM-DD
+        prices:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
