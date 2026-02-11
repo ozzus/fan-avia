@@ -9,7 +9,7 @@ COPY cmd/airfare-provider/go.mod cmd/airfare-provider/go.sum ./
 RUN go mod download -x
 COPY cmd/airfare-provider/ ./
 
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /app/airfare-provider ./cmd
+RUN CGO_ENABLED=0 go build -mod=mod -trimpath -ldflags="-s -w" -o /app/airfare-provider ./cmd
 
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates && update-ca-certificates
