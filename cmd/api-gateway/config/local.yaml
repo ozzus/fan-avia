@@ -9,11 +9,11 @@ http:
   shutdown_timeout: 5s
 clients:
   airfare:
-    address: localhost:44044
+    address: "127.0.0.1:44044"
     timeout: 5s
     retriesCount: 10
   match:
-    address: localhost:44045
+    address: "127.0.0.1:44045"
     timeout: 5s
     retriesCount: 10
 jaeger:
