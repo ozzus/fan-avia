@@ -1,31 +1,76 @@
-version: "3"
-
 services:
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
-      - "16686:16686" # Jaeger UI
-      - "14268:14268" # HTTP endpoint for spans
-      - "14250:14250" # gRPC endpoint for spans
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+
   redis:
     image: redis:7-alpine
     container_name: fan-avia-redis
     ports:
       - "6379:6379"
+
+  match-adapter:
+    build:
+      context: .
+      dockerfile: cmd/match-adapter/Dockerfile
+    image: fan-avia/match-adapter:local
+    container_name: match-adapter
+    ports:
+      - "44045:44045"
+    env_file:
+      - ./cmd/match-adapter/.env
+    environment:
+      REDIS_ADDR: redis:6379
+      JAEGER: jaeger:14268
+    depends_on:
+      - redis
+
+  airfare-provider:
+    build:
+      context: .
+      dockerfile: cmd/airfare-provider/Dockerfile
+    image: fan-avia/airfare-provider:local
+    container_name: airfare-provider
+    ports:
+      - "44044:44044"
+    env_file:
+      - ./cmd/airfare-provider/.env
+    environment:
+      REDIS_ADDR: redis:6379
+      MATCH_ADAPTER_HOST: match-adapter
+      MATCH_ADAPTER_PORT: "44045"
+      JAEGER: jaeger:14268
+    depends_on:
+      - redis
+      - match-adapter
+
   api-gateway:
-    image: chapix/aggregator_api_avia:latest
+    build:
+      context: .
+      dockerfile: cmd/api-gateway/Dockerfile
+    image: fan-avia/api-gateway:local
     container_name: api-gateway
     ports:
-      - "8080:8080" # Внешний порт
+      - "8080:8080"
+    environment:
+      AIRFARE_ADDRESS: airfare-provider:44044
+      MATCH_ADDRESS: match-adapter:44045
+      JAEGER_ADDRESS: jaeger:14268
     depends_on:
       - airfare-provider
-  airfare-provider:
-    image: chapix/airfare-avia:latest
-    container_name: airfare-provider
-    expose:
-      - "44044"
-  match-adapter:
-    image: chapix/match-avia:latest
-    container_name: match-adapter
-    expose:
-      - "44045"
+      - match-adapter
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
+    ports:
+      - "8081:8080"
+    environment:
+      SWAGGER_JSON: /local/openapi.yaml
+    volumes:
+      - ./:/local:ro
+    depends_on:
+      - api-gateway
