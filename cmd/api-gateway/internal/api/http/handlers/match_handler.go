@@ -113,6 +113,46 @@ func (h *MatchHandler) GetMatches(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *MatchHandler) GetUpcomingMatches(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	limit := int32(12)
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		parsed, err := strconv.ParseInt(raw, 10, 32)
+		if err != nil || parsed <= 0 {
+			writeError(w, http.StatusBadRequest, "limit must be a positive integer")
+			return
+		}
+		if parsed > 100 {
+			parsed = 100
+		}
+		limit = int32(parsed)
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
+	defer cancel()
+
+	resp, err := h.client.GetUpcomingMatches(ctx, limit)
+	if err != nil {
+		h.log.Error("get upcoming matches failed", zap.Error(err), zap.Int32("limit", limit))
+		writeError(w, http.StatusBadGateway, "match adapter error")
+		return
+	}
+
+	result := make([]matchResponse, 0, len(resp.GetMatches()))
+	for _, m := range resp.GetMatches() {
+		result = append(result, mapMatch(m))
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"matches": result,
+		"errors":  []matchLoadError{},
+	})
+}
+
 func mapMatch(in *matchv1.Match) matchResponse {
 	if in == nil {
 		return matchResponse{}

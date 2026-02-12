@@ -14,16 +14,19 @@ import (
 )
 
 type AirfareHandler struct {
-	log     *zap.Logger
-	client  *airfare.Client
-	timeout time.Duration
+	log               *zap.Logger
+	client            *airfare.Client
+	timeout           time.Duration
+	defaultOriginIATA string
 }
 
-func NewAirfareHandler(log *zap.Logger, client *airfare.Client, timeout time.Duration) *AirfareHandler {
+func NewAirfareHandler(log *zap.Logger, client *airfare.Client, timeout time.Duration, defaultOriginIATA string) *AirfareHandler {
+	defaultOriginIATA = strings.ToUpper(strings.TrimSpace(defaultOriginIATA))
 	return &AirfareHandler{
-		log:     log,
-		client:  client,
-		timeout: timeout,
+		log:               log,
+		client:            client,
+		timeout:           timeout,
+		defaultOriginIATA: defaultOriginIATA,
 	}
 }
 
@@ -41,7 +44,14 @@ func (h *AirfareHandler) GetAirfareByMatch(w http.ResponseWriter, r *http.Reques
 
 	originIATA := strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("origin_iata")))
 	if originIATA == "" {
+		originIATA = h.defaultOriginIATA
+	}
+	if originIATA == "" {
 		writeError(w, http.StatusBadRequest, "origin_iata is required")
+		return
+	}
+	if !isValidIATA(originIATA) {
+		writeError(w, http.StatusBadRequest, "origin_iata must be 3 latin letters")
 		return
 	}
 
@@ -110,4 +120,17 @@ func mapGRPCError(err error) string {
 		return "upstream error"
 	}
 	return st.Message()
+}
+
+func isValidIATA(v string) bool {
+	if len(v) != 3 {
+		return false
+	}
+	for i := 0; i < len(v); i++ {
+		ch := v[i]
+		if ch < 'A' || ch > 'Z' {
+			return false
+		}
+	}
+	return true
 }

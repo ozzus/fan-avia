@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MatchAdapterService_GetMatch_FullMethodName = "/match.v1.MatchAdapterService/GetMatch"
+	MatchAdapterService_GetMatch_FullMethodName           = "/match.v1.MatchAdapterService/GetMatch"
+	MatchAdapterService_GetUpcomingMatches_FullMethodName = "/match.v1.MatchAdapterService/GetUpcomingMatches"
 )
 
 // MatchAdapterServiceClient is the client API for MatchAdapterService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MatchAdapterServiceClient interface {
 	GetMatch(ctx context.Context, in *GetMatchRequest, opts ...grpc.CallOption) (*GetMatchResponse, error)
+	GetUpcomingMatches(ctx context.Context, in *GetUpcomingMatchesRequest, opts ...grpc.CallOption) (*GetUpcomingMatchesResponse, error)
 }
 
 type matchAdapterServiceClient struct {
@@ -47,11 +49,22 @@ func (c *matchAdapterServiceClient) GetMatch(ctx context.Context, in *GetMatchRe
 	return out, nil
 }
 
+func (c *matchAdapterServiceClient) GetUpcomingMatches(ctx context.Context, in *GetUpcomingMatchesRequest, opts ...grpc.CallOption) (*GetUpcomingMatchesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUpcomingMatchesResponse)
+	err := c.cc.Invoke(ctx, MatchAdapterService_GetUpcomingMatches_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MatchAdapterServiceServer is the server API for MatchAdapterService service.
 // All implementations must embed UnimplementedMatchAdapterServiceServer
 // for forward compatibility.
 type MatchAdapterServiceServer interface {
 	GetMatch(context.Context, *GetMatchRequest) (*GetMatchResponse, error)
+	GetUpcomingMatches(context.Context, *GetUpcomingMatchesRequest) (*GetUpcomingMatchesResponse, error)
 	mustEmbedUnimplementedMatchAdapterServiceServer()
 }
 
@@ -64,6 +77,9 @@ type UnimplementedMatchAdapterServiceServer struct{}
 
 func (UnimplementedMatchAdapterServiceServer) GetMatch(context.Context, *GetMatchRequest) (*GetMatchResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMatch not implemented")
+}
+func (UnimplementedMatchAdapterServiceServer) GetUpcomingMatches(context.Context, *GetUpcomingMatchesRequest) (*GetUpcomingMatchesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUpcomingMatches not implemented")
 }
 func (UnimplementedMatchAdapterServiceServer) mustEmbedUnimplementedMatchAdapterServiceServer() {}
 func (UnimplementedMatchAdapterServiceServer) testEmbeddedByValue()                             {}
@@ -104,6 +120,24 @@ func _MatchAdapterService_GetMatch_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MatchAdapterService_GetUpcomingMatches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUpcomingMatchesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MatchAdapterServiceServer).GetUpcomingMatches(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MatchAdapterService_GetUpcomingMatches_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MatchAdapterServiceServer).GetUpcomingMatches(ctx, req.(*GetUpcomingMatchesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MatchAdapterService_ServiceDesc is the grpc.ServiceDesc for MatchAdapterService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var MatchAdapterService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMatch",
 			Handler:    _MatchAdapterService_GetMatch_Handler,
+		},
+		{
+			MethodName: "GetUpcomingMatches",
+			Handler:    _MatchAdapterService_GetUpcomingMatches_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

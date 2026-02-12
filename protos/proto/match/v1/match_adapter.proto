@@ -8,6 +8,7 @@ option go_package = "github.com/ozzus/fan-avia/protos/gen/go/match/v1;matchv1";
 
 service MatchAdapterService {
   rpc GetMatch(GetMatchRequest) returns (GetMatchResponse);
+  rpc GetUpcomingMatches(GetUpcomingMatchesRequest) returns (GetUpcomingMatchesResponse);
 }
 
 message GetMatchRequest {
@@ -16,6 +17,14 @@ message GetMatchRequest {
 
 message GetMatchResponse {
   Match match = 1;
+}
+
+message GetUpcomingMatchesRequest {
+  int32 limit = 1;
+}
+
+message GetUpcomingMatchesResponse {
+  repeated Match matches = 1;
 }
 
 message Match {

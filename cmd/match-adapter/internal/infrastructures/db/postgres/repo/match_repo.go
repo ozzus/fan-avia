@@ -80,6 +80,64 @@ func (r *Repository) GetByID(ctx context.Context, id models.MatchID) (models.Mat
 	return match, nil
 }
 
+func (r *Repository) GetUpcoming(ctx context.Context, limit int) ([]models.Match, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+
+	const query = `
+		SELECT
+			match_id,
+			kickoff_utc,
+			city,
+			stadium,
+			destination_iata,
+			tickets_link,
+			COALESCE(club_home_id, ''),
+			COALESCE(club_away_id, '')
+		FROM matches
+		WHERE kickoff_utc >= now()
+		ORDER BY kickoff_utc ASC
+		LIMIT $1
+	`
+
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("query upcoming matches: %w", err)
+	}
+	defer rows.Close()
+
+	matches := make([]models.Match, 0, limit)
+	for rows.Next() {
+		var (
+			storedID int64
+			match    models.Match
+		)
+
+		if err := rows.Scan(
+			&storedID,
+			&match.KickoffUTC,
+			&match.City,
+			&match.Stadium,
+			&match.DestinationIATA,
+			&match.TicketsLink,
+			&match.HomeTeam,
+			&match.AwayTeam,
+		); err != nil {
+			return nil, fmt.Errorf("scan upcoming match: %w", err)
+		}
+
+		match.ID = models.MatchID(strconv.FormatInt(storedID, 10))
+		matches = append(matches, match)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate upcoming matches: %w", err)
+	}
+
+	return matches, nil
+}
+
 func (r *Repository) Upsert(ctx context.Context, match models.Match) error {
 	matchID, err := strconv.ParseInt(string(match.ID), 10, 64)
 	if err != nil {

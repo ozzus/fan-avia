@@ -139,3 +139,24 @@ func TestGetAirfareByMatch_AllSourceCallsFail(t *testing.T) {
 		t.Fatalf("unexpected error: got %v want %v", err, derr.ErrSourceTemporary)
 	}
 }
+
+func TestGetAirfareByMatch_InvalidRoute_OriginEqualsDestination(t *testing.T) {
+	cache := &testCache{getErr: derr.ErrAirfareNotFound}
+	reader := &testMatchReader{
+		match: ports.MatchSnapshot{
+			MatchID:         16114,
+			KickoffUTC:      time.Date(2026, 2, 27, 19, 30, 0, 0, time.UTC),
+			DestinationIATA: "LED",
+		},
+	}
+	fares := &testFareSource{}
+	svc := NewAirfareService(zap.NewNop(), reader, fares, cache, 10*time.Minute)
+
+	_, err := svc.GetAirfareByMatch(context.Background(), 16114, "LED")
+	if !errors.Is(err, derr.ErrInvalidRoute) {
+		t.Fatalf("unexpected error: got %v want %v", err, derr.ErrInvalidRoute)
+	}
+	if len(fares.searches) != 0 {
+		t.Fatalf("fare source must not be called for invalid route, calls=%d", len(fares.searches))
+	}
+}

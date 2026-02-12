@@ -154,6 +154,8 @@ func mapGetAirfareByMatchError(err error) error {
 	switch {
 	case errors.Is(err, derr.ErrInvalidOrigin):
 		return status.Error(codes.InvalidArgument, "origin_iata is invalid")
+	case errors.Is(err, derr.ErrInvalidRoute):
+		return status.Error(codes.InvalidArgument, "origin_iata and destination_iata must differ")
 	case errors.Is(err, derr.ErrMatchNotFound):
 		return status.Error(codes.NotFound, "match not found")
 	case errors.Is(err, derr.ErrSourceTemporary):

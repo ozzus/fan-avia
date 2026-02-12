@@ -4,4 +4,10 @@ log:
 db:
   sslmode: "require"
 premierliga:
-  base_url: "http://localhost:8080"
+  base_url: "https://api.premierliga.ru"
+match_sync:
+  enabled: true
+  interval: 15m
+  horizon: 720h
+  limit: 50
+  request_timeout: 30s

@@ -49,6 +49,103 @@ paths:
               example:
                 error: "match adapter error"
 
+  /v1/matches/upcoming:
+    get:
+      summary: Get upcoming matches
+      description: Returns nearest upcoming matches sorted by kickoff UTC ascending.
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 12
+          description: Number of matches to return.
+      responses:
+        "200":
+          description: Upcoming matches response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetMatchesResponse"
+              example:
+                matches:
+                  - match_id: "16114"
+                    kickoff_utc: "2026-02-27T19:30:00Z"
+                    city: "Saint Petersburg"
+                    stadium: "Газпром Арена"
+                    destination_airport_iata: "LED"
+                    club_home_id: "3"
+                    club_away_id: "444"
+                    tickets_link: "https://tickets.fc-zenit.ru/football/tickets/#zenit"
+                errors: []
+        "400":
+          description: Invalid request params
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "limit must be a positive integer"
+        "502":
+          description: Upstream source error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "match adapter error"
+
+  /v1/matches/upcoming-with-airfare:
+    get:
+      summary: Get upcoming matches with airfare summary
+      description: Returns upcoming matches and best available airfare per match for given origin.
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 12
+          description: Number of matches to return.
+        - in: query
+          name: origin_iata
+          required: false
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 3
+            pattern: "^[A-Za-z]{3}$"
+            default: MOW
+          description: Origin city/airport IATA. If omitted, gateway default is used.
+      responses:
+        "200":
+          description: Upcoming matches with airfare summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpcomingWithAirfareResponse"
+        "400":
+          description: Invalid request params
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "origin_iata must be 3 latin letters"
+        "502":
+          description: Upstream source error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "match adapter error"
+
   /v1/matches/{match_id}:
     get:
       summary: Get match by id
@@ -108,13 +205,14 @@ paths:
           description: Match ID
         - in: query
           name: origin_iata
-          required: true
+          required: false
           schema:
             type: string
             minLength: 3
             maxLength: 3
             pattern: "^[A-Za-z]{3}$"
-          description: Origin city/airport IATA code (e.g. MOW)
+            default: MOW
+          description: Origin city/airport IATA code (e.g. MOW). If omitted, gateway default is used.
       responses:
         "200":
           description: Airfare slots response
@@ -157,7 +255,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                error: "origin_iata is required"
+                error: "origin_iata must be 3 latin letters"
+          examples:
+            invalid_origin:
+              summary: Invalid IATA format
+              value:
+                error: "origin_iata must be 3 latin letters"
+            invalid_route:
+              summary: Same origin and destination
+              value:
+                error: "origin_iata and destination_iata must differ"
         "404":
           description: Match not found
           content:
@@ -285,6 +392,54 @@ components:
           items:
             type: integer
             format: int64
+
+    UpcomingWithAirfareResponse:
+      type: object
+      required:
+        - origin_iata
+        - items
+        - errors
+      properties:
+        origin_iata:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UpcomingWithAirfareItem"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AirfareLoadError"
+
+    UpcomingWithAirfareItem:
+      type: object
+      required:
+        - match
+      properties:
+        match:
+          $ref: "#/components/schemas/Match"
+        min_price:
+          type: integer
+          format: int64
+          nullable: true
+        best_slot:
+          type: string
+        best_date:
+          type: string
+          format: date
+        airfare_error:
+          type: string
+
+    AirfareLoadError:
+      type: object
+      required:
+        - match_id
+        - error
+      properties:
+        match_id:
+          type: string
+        error:
+          type: string
 
     ErrorResponse:
       type: object

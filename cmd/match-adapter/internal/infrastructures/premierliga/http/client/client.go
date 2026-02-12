@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	derr "github.com/ozzus/fan-avia/cmd/match-adapter/internal/domain/errors"
@@ -25,7 +27,28 @@ const (
 	fullDataMatchPath = "/api/getFullDataMatch"
 	clubsPath         = "/api/getClubs"
 	historyGamesPath  = "/api/getHistoryGames"
+	eventsPath        = "/api/getEvents"
+	tournamentsPath   = "/api/getTournaments"
+	matchesPath       = "/api/getMatches"
 )
+
+const maxErrorBodyBytes = 4096
+
+type StatusError struct {
+	StatusCode int
+	Status     string
+	Body       string
+}
+
+func (e *StatusError) Error() string {
+	if e == nil {
+		return "http status error"
+	}
+	if e.Body == "" {
+		return fmt.Sprintf("unexpected status: %s", e.Status)
+	}
+	return fmt.Sprintf("unexpected status: %s, body: %s", e.Status, e.Body)
+}
 
 func NewClient(baseURL string, httpClient *http.Client, maxAttempts int, baseBackoff time.Duration) *Client {
 	if maxAttempts < 1 {
@@ -61,6 +84,40 @@ func (c *Client) GetHistoryGames(ctx context.Context, id int64) (dto.GetHistoryG
 	reqBody := dto.GetHistoryGamesRequest{ID: id}
 	var resp dto.GetHistoryGamesResponse
 	err := c.postWithRetry(ctx, historyGamesPath, reqBody, &resp, nil)
+	return resp, err
+}
+
+func (c *Client) GetEvents(ctx context.Context, reqBody dto.GetEventsRequest) ([]dto.Event, error) {
+	var raw json.RawMessage
+	if err := c.postWithRetry(ctx, eventsPath, reqBody, &raw, nil); err != nil {
+		return nil, err
+	}
+
+	events, err := dto.UnmarshalEvents(raw)
+	if err != nil {
+		return nil, fmt.Errorf("decode events: %w", err)
+	}
+
+	return events, nil
+}
+
+func (c *Client) GetTournaments(ctx context.Context, reqBody dto.GetTournamentsRequest) ([]dto.Tournament, error) {
+	var raw json.RawMessage
+	if err := c.postWithRetry(ctx, tournamentsPath, reqBody, &raw, nil); err != nil {
+		return nil, err
+	}
+
+	tournaments, err := dto.UnmarshalTournaments(raw)
+	if err != nil {
+		return nil, fmt.Errorf("decode tournaments: %w", err)
+	}
+
+	return tournaments, nil
+}
+
+func (c *Client) GetMatches(ctx context.Context, reqBody dto.GetMatchesRequest) ([]dto.GetMatchesResponseItem, error) {
+	var resp []dto.GetMatchesResponseItem
+	err := c.postWithRetry(ctx, matchesPath, reqBody, &resp, nil)
 	return resp, err
 }
 
@@ -119,16 +176,23 @@ func (c *Client) postOnce(ctx context.Context, endpointPath string, payload []by
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		body := readBodySafe(resp.Body)
+		statusErr := &StatusError{
+			StatusCode: resp.StatusCode,
+			Status:     resp.Status,
+			Body:       body,
+		}
+
 		if resp.StatusCode == http.StatusNotFound {
 			if notFoundErr != nil {
 				return notFoundErr
 			}
-			return fmt.Errorf("%w: endpoint not found: %s", derr.ErrSourceUnavailable, c.endpointURL(endpointPath))
+			return fmt.Errorf("%w: %v", derr.ErrSourceUnavailable, statusErr)
 		}
 		if resp.StatusCode >= http.StatusInternalServerError || resp.StatusCode == http.StatusTooManyRequests {
-			return fmt.Errorf("%w: unexpected status: %s", derr.ErrSourceUnavailable, resp.Status)
+			return fmt.Errorf("%w: %v", derr.ErrSourceUnavailable, statusErr)
 		}
-		return fmt.Errorf("unexpected status: %s", resp.Status)
+		return statusErr
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
@@ -136,6 +200,18 @@ func (c *Client) postOnce(ctx context.Context, endpointPath string, payload []by
 	}
 
 	return nil
+}
+
+func readBodySafe(body io.Reader) string {
+	if body == nil {
+		return ""
+	}
+
+	raw, err := io.ReadAll(io.LimitReader(body, maxErrorBodyBytes))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(raw))
 }
 
 func (c *Client) endpointURL(path string) string {

@@ -26,6 +26,10 @@ func (m *matchAdapterClientMock) GetMatch(ctx context.Context, in *matchv1.GetMa
 	return m.resp, nil
 }
 
+func (m *matchAdapterClientMock) GetUpcomingMatches(ctx context.Context, in *matchv1.GetUpcomingMatchesRequest, opts ...grpc.CallOption) (*matchv1.GetUpcomingMatchesResponse, error) {
+	return &matchv1.GetUpcomingMatchesResponse{}, nil
+}
+
 func TestClient_GetMatch_MapsNotFound(t *testing.T) {
 	c := NewClient(&matchAdapterClientMock{
 		err: status.Error(codes.NotFound, "not found"),

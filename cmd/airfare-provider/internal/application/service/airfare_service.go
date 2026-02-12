@@ -89,6 +89,17 @@ func (s *AirfareService) GetAirfareByMatch(ctx context.Context, matchID int64, o
 		return ports.AirfareByMatch{}, err
 	}
 
+	destinationIATA := strings.ToUpper(strings.TrimSpace(match.DestinationIATA))
+	normalizedOrigin := strings.ToUpper(strings.TrimSpace(originIATA))
+	if normalizedOrigin == destinationIATA {
+		logger.Warn(
+			"invalid route: origin equals destination",
+			zap.String("destination_iata", destinationIATA),
+		)
+		span.SetStatus(otelcodes.Error, "invalid route")
+		return ports.AirfareByMatch{}, derr.ErrInvalidRoute
+	}
+
 	kickoffUTC := match.KickoffUTC.UTC()
 	if match.KickoffUTC.Location() != time.UTC {
 		logger.Info(
@@ -107,7 +118,7 @@ func (s *AirfareService) GetAirfareByMatch(ctx context.Context, matchID int64, o
 	if s.fareSource != nil {
 		sourceFailures := 0
 		for i := range result.Slots {
-			search := s.buildFareSearch(result.Slots[i], originIATA, match.DestinationIATA, kickoffUTC)
+			search := s.buildFareSearch(result.Slots[i], normalizedOrigin, destinationIATA, kickoffUTC)
 			prices, err := s.fareSource.GetPrices(ctx, search)
 			if err != nil {
 				sourceFailures++

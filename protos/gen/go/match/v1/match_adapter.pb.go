@@ -110,6 +110,94 @@ func (x *GetMatchResponse) GetMatch() *Match {
 	return nil
 }
 
+type GetUpcomingMatchesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUpcomingMatchesRequest) Reset() {
+	*x = GetUpcomingMatchesRequest{}
+	mi := &file_match_v1_match_adapter_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUpcomingMatchesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUpcomingMatchesRequest) ProtoMessage() {}
+
+func (x *GetUpcomingMatchesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_match_v1_match_adapter_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUpcomingMatchesRequest.ProtoReflect.Descriptor instead.
+func (*GetUpcomingMatchesRequest) Descriptor() ([]byte, []int) {
+	return file_match_v1_match_adapter_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetUpcomingMatchesRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type GetUpcomingMatchesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Matches       []*Match               `protobuf:"bytes,1,rep,name=matches,proto3" json:"matches,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUpcomingMatchesResponse) Reset() {
+	*x = GetUpcomingMatchesResponse{}
+	mi := &file_match_v1_match_adapter_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUpcomingMatchesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUpcomingMatchesResponse) ProtoMessage() {}
+
+func (x *GetUpcomingMatchesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_match_v1_match_adapter_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUpcomingMatchesResponse.ProtoReflect.Descriptor instead.
+func (*GetUpcomingMatchesResponse) Descriptor() ([]byte, []int) {
+	return file_match_v1_match_adapter_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetUpcomingMatchesResponse) GetMatches() []*Match {
+	if x != nil {
+		return x.Matches
+	}
+	return nil
+}
+
 type Match struct {
 	state                  protoimpl.MessageState `protogen:"open.v1"`
 	MatchId                int64                  `protobuf:"varint,1,opt,name=match_id,json=matchId,proto3" json:"match_id,omitempty"`
@@ -126,7 +214,7 @@ type Match struct {
 
 func (x *Match) Reset() {
 	*x = Match{}
-	mi := &file_match_v1_match_adapter_proto_msgTypes[2]
+	mi := &file_match_v1_match_adapter_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -138,7 +226,7 @@ func (x *Match) String() string {
 func (*Match) ProtoMessage() {}
 
 func (x *Match) ProtoReflect() protoreflect.Message {
-	mi := &file_match_v1_match_adapter_proto_msgTypes[2]
+	mi := &file_match_v1_match_adapter_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -151,7 +239,7 @@ func (x *Match) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Match.ProtoReflect.Descriptor instead.
 func (*Match) Descriptor() ([]byte, []int) {
-	return file_match_v1_match_adapter_proto_rawDescGZIP(), []int{2}
+	return file_match_v1_match_adapter_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Match) GetMatchId() int64 {
@@ -218,7 +306,11 @@ const file_match_v1_match_adapter_proto_rawDesc = "" +
 	"\x0fGetMatchRequest\x12\x19\n" +
 	"\bmatch_id\x18\x01 \x01(\x03R\amatchId\"9\n" +
 	"\x10GetMatchResponse\x12%\n" +
-	"\x05match\x18\x01 \x01(\v2\x0f.match.v1.MatchR\x05match\"\xae\x02\n" +
+	"\x05match\x18\x01 \x01(\v2\x0f.match.v1.MatchR\x05match\"1\n" +
+	"\x19GetUpcomingMatchesRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\"G\n" +
+	"\x1aGetUpcomingMatchesResponse\x12)\n" +
+	"\amatches\x18\x01 \x03(\v2\x0f.match.v1.MatchR\amatches\"\xae\x02\n" +
 	"\x05Match\x12\x19\n" +
 	"\bmatch_id\x18\x01 \x01(\x03R\amatchId\x12;\n" +
 	"\vkickoff_utc\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
@@ -230,9 +322,10 @@ const file_match_v1_match_adapter_proto_rawDesc = "" +
 	"clubHomeId\x12 \n" +
 	"\fclub_away_id\x18\a \x01(\tR\n" +
 	"clubAwayId\x12!\n" +
-	"\ftickets_link\x18\b \x01(\tR\vticketsLink2X\n" +
+	"\ftickets_link\x18\b \x01(\tR\vticketsLink2\xb9\x01\n" +
 	"\x13MatchAdapterService\x12A\n" +
-	"\bGetMatch\x12\x19.match.v1.GetMatchRequest\x1a\x1a.match.v1.GetMatchResponseB:Z8github.com/ozzus/fan-avia/protos/gen/go/match/v1;matchv1b\x06proto3"
+	"\bGetMatch\x12\x19.match.v1.GetMatchRequest\x1a\x1a.match.v1.GetMatchResponse\x12_\n" +
+	"\x12GetUpcomingMatches\x12#.match.v1.GetUpcomingMatchesRequest\x1a$.match.v1.GetUpcomingMatchesResponseB:Z8github.com/ozzus/fan-avia/protos/gen/go/match/v1;matchv1b\x06proto3"
 
 var (
 	file_match_v1_match_adapter_proto_rawDescOnce sync.Once
@@ -246,23 +339,28 @@ func file_match_v1_match_adapter_proto_rawDescGZIP() []byte {
 	return file_match_v1_match_adapter_proto_rawDescData
 }
 
-var file_match_v1_match_adapter_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_match_v1_match_adapter_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_match_v1_match_adapter_proto_goTypes = []any{
-	(*GetMatchRequest)(nil),       // 0: match.v1.GetMatchRequest
-	(*GetMatchResponse)(nil),      // 1: match.v1.GetMatchResponse
-	(*Match)(nil),                 // 2: match.v1.Match
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(*GetMatchRequest)(nil),            // 0: match.v1.GetMatchRequest
+	(*GetMatchResponse)(nil),           // 1: match.v1.GetMatchResponse
+	(*GetUpcomingMatchesRequest)(nil),  // 2: match.v1.GetUpcomingMatchesRequest
+	(*GetUpcomingMatchesResponse)(nil), // 3: match.v1.GetUpcomingMatchesResponse
+	(*Match)(nil),                      // 4: match.v1.Match
+	(*timestamppb.Timestamp)(nil),      // 5: google.protobuf.Timestamp
 }
 var file_match_v1_match_adapter_proto_depIdxs = []int32{
-	2, // 0: match.v1.GetMatchResponse.match:type_name -> match.v1.Match
-	3, // 1: match.v1.Match.kickoff_utc:type_name -> google.protobuf.Timestamp
-	0, // 2: match.v1.MatchAdapterService.GetMatch:input_type -> match.v1.GetMatchRequest
-	1, // 3: match.v1.MatchAdapterService.GetMatch:output_type -> match.v1.GetMatchResponse
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 0: match.v1.GetMatchResponse.match:type_name -> match.v1.Match
+	4, // 1: match.v1.GetUpcomingMatchesResponse.matches:type_name -> match.v1.Match
+	5, // 2: match.v1.Match.kickoff_utc:type_name -> google.protobuf.Timestamp
+	0, // 3: match.v1.MatchAdapterService.GetMatch:input_type -> match.v1.GetMatchRequest
+	2, // 4: match.v1.MatchAdapterService.GetUpcomingMatches:input_type -> match.v1.GetUpcomingMatchesRequest
+	1, // 5: match.v1.MatchAdapterService.GetMatch:output_type -> match.v1.GetMatchResponse
+	3, // 6: match.v1.MatchAdapterService.GetUpcomingMatches:output_type -> match.v1.GetUpcomingMatchesResponse
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_match_v1_match_adapter_proto_init() }
@@ -276,7 +374,7 @@ func file_match_v1_match_adapter_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_match_v1_match_adapter_proto_rawDesc), len(file_match_v1_match_adapter_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

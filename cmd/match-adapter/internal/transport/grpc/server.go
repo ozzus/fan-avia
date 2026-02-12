@@ -48,18 +48,51 @@ func (s *serverAPI) GetMatch(ctx context.Context, req *matchv1.GetMatchRequest) 
 		return nil, status.Error(codes.Internal, "invalid match id in storage")
 	}
 
-	return &matchv1.GetMatchResponse{
-		Match: &matchv1.Match{
-			MatchId:                matchID,
-			KickoffUtc:             timestamppb.New(m.KickoffUTC),
-			City:                   m.City,
-			Stadium:                m.Stadium,
-			DestinationAirportIata: m.DestinationIATA,
-			ClubHomeId:             m.HomeTeam,
-			ClubAwayId:             m.AwayTeam,
-			TicketsLink:            m.TicketsLink,
-		},
-	}, nil
+	return &matchv1.GetMatchResponse{Match: toProtoMatch(matchID, m)}, nil
+}
+
+func (s *serverAPI) GetUpcomingMatches(ctx context.Context, req *matchv1.GetUpcomingMatchesRequest) (*matchv1.GetUpcomingMatchesResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	limit := int(req.GetLimit())
+	if limit <= 0 {
+		limit = 10
+	}
+
+	matches, err := s.service.GetUpcomingMatches(ctx, limit)
+	if err != nil {
+		s.log.Error("GetUpcomingMatches failed", zap.Int("limit", limit), zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	resp := &matchv1.GetUpcomingMatchesResponse{
+		Matches: make([]*matchv1.Match, 0, len(matches)),
+	}
+	for _, m := range matches {
+		matchID, err := strconv.ParseInt(string(m.ID), 10, 64)
+		if err != nil {
+			s.log.Error("failed to parse match id", zap.String("match_id", string(m.ID)), zap.Error(err))
+			return nil, status.Error(codes.Internal, "invalid match id in storage")
+		}
+		resp.Matches = append(resp.Matches, toProtoMatch(matchID, m))
+	}
+
+	return resp, nil
+}
+
+func toProtoMatch(matchID int64, m models.Match) *matchv1.Match {
+	return &matchv1.Match{
+		MatchId:                matchID,
+		KickoffUtc:             timestamppb.New(m.KickoffUTC),
+		City:                   m.City,
+		Stadium:                m.Stadium,
+		DestinationAirportIata: m.DestinationIATA,
+		ClubHomeId:             m.HomeTeam,
+		ClubAwayId:             m.AwayTeam,
+		TicketsLink:            m.TicketsLink,
+	}
 }
 
 func mapGetMatchError(err error) error {

@@ -79,6 +79,57 @@ func main() {
 	matchCache := matchredis.NewMatchCache(redisClient)
 	matchService := service.NewMatchService(log, matchSource, repo, repo, matchCache, cfg.MatchCacheTTL)
 
+	if cfg.MatchSync.Enabled {
+		interval := cfg.MatchSync.Interval
+		if interval <= 0 {
+			interval = 15 * time.Minute
+		}
+		horizon := cfg.MatchSync.Horizon
+		if horizon <= 0 {
+			horizon = 30 * 24 * time.Hour
+		}
+		requestTimeout := cfg.MatchSync.RequestTimeout
+		if requestTimeout <= 0 {
+			requestTimeout = 30 * time.Second
+		}
+
+		runSync := func(trigger string) {
+			now := time.Now().UTC()
+			syncCtx, cancel := context.WithTimeout(ctx, requestTimeout)
+			defer cancel()
+
+			saved, err := matchService.SyncUpcomingMatches(syncCtx, now, now.Add(horizon), cfg.MatchSync.Limit)
+			if err != nil {
+				log.Warn(
+					"upcoming matches sync failed",
+					zap.String("trigger", trigger),
+					zap.Error(err),
+				)
+				return
+			}
+
+			log.Info(
+				"upcoming matches sync completed",
+				zap.String("trigger", trigger),
+				zap.Int("saved", saved),
+			)
+		}
+
+		runSync("startup")
+		ticker := time.NewTicker(interval)
+		go func() {
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					runSync("ticker")
+				}
+			}
+		}()
+	}
+
 	grpcApp := grpcapp.New(log, cfg.GRPC.Host, cfg.GRPC.Port, func(s *grpc.Server) {
 		grpcapi.Register(s, log, matchService)
 	})

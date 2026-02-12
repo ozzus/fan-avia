@@ -14,6 +14,7 @@ type Config struct {
 	Env             string            `yaml:"env" env:"ENV" env-default:"local"`
 	RefreshTokenTTL time.Duration     `yaml:"refresh_token_ttl" env:"REFRESH_TOKEN_TTL" env-default:"168h"`
 	MatchCacheTTL   time.Duration     `yaml:"match_cache_ttl" env:"MATCH_CACHE_TTL" env-default:"30m"`
+	MatchSync       MatchSyncConfig   `yaml:"match_sync"`
 	Jaeger          string            `yaml:"jaeger" env:"JAEGER" env-default:"jaeger"`
 	Log             LogConfig         `yaml:"log"`
 	GRPC            GRPCConfig        `yaml:"grpc"`
@@ -46,6 +47,14 @@ type RedisConfig struct {
 	Addr     string `yaml:"addr" env:"REDIS_ADDR" env-default:"localhost:6379"`
 	Password string `yaml:"password" env:"REDIS_PASSWORD"`
 	DB       int    `yaml:"db" env:"REDIS_DB" env-default:"0"`
+}
+
+type MatchSyncConfig struct {
+	Enabled        bool          `yaml:"enabled" env:"MATCH_SYNC_ENABLED" env-default:"true"`
+	Interval       time.Duration `yaml:"interval" env:"MATCH_SYNC_INTERVAL" env-default:"15m"`
+	Horizon        time.Duration `yaml:"horizon" env:"MATCH_SYNC_HORIZON" env-default:"720h"`
+	Limit          int           `yaml:"limit" env:"MATCH_SYNC_LIMIT" env-default:"50"`
+	RequestTimeout time.Duration `yaml:"request_timeout" env:"MATCH_SYNC_REQUEST_TIMEOUT" env-default:"30s"`
 }
 
 func (c DBConfig) DatabaseURL() string {

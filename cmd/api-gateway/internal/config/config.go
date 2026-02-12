@@ -9,11 +9,12 @@ import (
 )
 
 type Config struct {
-	Env     string        `yaml:"env" env:"ENV" env-default:"local"`
-	Log     LogConfig     `yaml:"log"`
-	HTTP    HTTPConfig    `yaml:"http"`
-	Clients ClientsConfig `yaml:"clients"`
-	Jaeger  JaegerConfig  `yaml:"jaeger"`
+	Env      string         `yaml:"env" env:"ENV" env-default:"local"`
+	Log      LogConfig      `yaml:"log"`
+	HTTP     HTTPConfig     `yaml:"http"`
+	Clients  ClientsConfig  `yaml:"clients"`
+	Defaults DefaultsConfig `yaml:"defaults"`
+	Jaeger   JaegerConfig   `yaml:"jaeger"`
 }
 
 type LogConfig struct {
@@ -47,6 +48,10 @@ type MatchClientConfig struct {
 
 type JaegerConfig struct {
 	Address string `yaml:"address" env:"JAEGER_ADDRESS"`
+}
+
+type DefaultsConfig struct {
+	OriginIATA string `yaml:"origin_iata" env:"DEFAULT_ORIGIN_IATA" env-default:"MOW"`
 }
 
 func MustLoad() *Config {
