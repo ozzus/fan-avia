@@ -17,7 +17,12 @@ type Repository struct {
 }
 
 func New(ctx context.Context, dsn string) (*Repository, error) {
-	pool, err := pgxpool.New(ctx, dsn)
+	poolCfg, err := buildPoolConfig(dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return nil, fmt.Errorf("create pgx pool: %w", err)
 	}
@@ -28,6 +33,18 @@ func New(ctx context.Context, dsn string) (*Repository, error) {
 	}
 
 	return &Repository{db: pool}, nil
+}
+
+func buildPoolConfig(dsn string) (*pgxpool.Config, error) {
+	poolCfg, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("parse pgx pool config: %w", err)
+	}
+	poolCfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	poolCfg.ConnConfig.StatementCacheCapacity = 0
+	poolCfg.ConnConfig.DescriptionCacheCapacity = 0
+
+	return poolCfg, nil
 }
 
 func (r *Repository) Close() {
