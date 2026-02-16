@@ -113,11 +113,11 @@ func TestGetAirfareByMatch_NormalizesKickoffToUTC(t *testing.T) {
 		t.Fatalf("expected 6 fare searches, got %d", len(fares.searches))
 	}
 	arriveBy := fares.searches[2].ArriveNotLaterUTC
-	if arriveBy == nil || !arriveBy.Equal(time.Date(2026, 2, 27, 17, 30, 0, 0, time.UTC)) {
+	if arriveBy == nil || !arriveBy.Equal(time.Date(2026, 2, 27, 15, 30, 0, 0, time.UTC)) {
 		t.Fatalf("unexpected arrive-by constraint: %v", arriveBy)
 	}
 	departAfter := fares.searches[3].DepartNotBeforeUTC
-	if departAfter == nil || !departAfter.Equal(time.Date(2026, 2, 27, 23, 30, 0, 0, time.UTC)) {
+	if departAfter == nil || !departAfter.Equal(time.Date(2026, 2, 27, 21, 30, 0, 0, time.UTC)) {
 		t.Fatalf("unexpected depart-after constraint: %v", departAfter)
 	}
 }

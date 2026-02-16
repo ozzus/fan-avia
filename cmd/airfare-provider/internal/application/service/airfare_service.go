@@ -182,10 +182,10 @@ func (s *AirfareService) buildFareSearch(slot ports.FareSlot, originIATA, destin
 
 	switch slot.Kind {
 	case ports.SlotOutD0ArriveBy:
-		limit := kickoffUTC.Add(-2 * time.Hour)
+		limit := kickoffUTC.Add(-4 * time.Hour)
 		search.ArriveNotLaterUTC = &limit
 	case ports.SlotRetD0DepartAfter:
-		limit := kickoffUTC.Add(4 * time.Hour)
+		limit := kickoffUTC.Add(2 * time.Hour)
 		search.DepartNotBeforeUTC = &limit
 	}
 
