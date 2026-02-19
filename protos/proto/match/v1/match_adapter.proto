@@ -9,6 +9,7 @@ option go_package = "github.com/ozzus/fan-avia/protos/gen/go/match/v1;matchv1";
 service MatchAdapterService {
   rpc GetMatch(GetMatchRequest) returns (GetMatchResponse);
   rpc GetUpcomingMatches(GetUpcomingMatchesRequest) returns (GetUpcomingMatchesResponse);
+  rpc GetClubs(GetClubsRequest) returns (GetClubsResponse);
 }
 
 message GetMatchRequest {
@@ -28,6 +29,12 @@ message GetUpcomingMatchesResponse {
   repeated Match matches = 1;
 }
 
+message GetClubsRequest {}
+
+message GetClubsResponse {
+  repeated Club clubs = 1;
+}
+
 message Match {
   int64 match_id = 1;
   google.protobuf.Timestamp kickoff_utc = 2;
@@ -37,4 +44,10 @@ message Match {
   string club_home_id = 6;
   string club_away_id = 7;
   string tickets_link = 8;
+}
+
+message Club {
+  string club_id = 1;
+  string name_ru = 2;
+  string name_en = 3;
 }

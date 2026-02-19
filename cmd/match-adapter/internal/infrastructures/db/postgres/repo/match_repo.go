@@ -158,6 +158,38 @@ func (r *Repository) GetUpcoming(ctx context.Context, limit int, clubID string) 
 	return matches, nil
 }
 
+func (r *Repository) GetClubs(ctx context.Context) ([]models.Club, error) {
+	const query = `
+		SELECT
+			club_id,
+			name_ru,
+			COALESCE(name_en, '')
+		FROM club_dictionary
+		ORDER BY name_ru ASC
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("query clubs: %w", err)
+	}
+	defer rows.Close()
+
+	clubs := make([]models.Club, 0, 32)
+	for rows.Next() {
+		var club models.Club
+		if err := rows.Scan(&club.ID, &club.NameRU, &club.NameEN); err != nil {
+			return nil, fmt.Errorf("scan club: %w", err)
+		}
+		clubs = append(clubs, club)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate clubs: %w", err)
+	}
+
+	return clubs, nil
+}
+
 func (r *Repository) Upsert(ctx context.Context, match models.Match) error {
 	matchID, err := strconv.ParseInt(string(match.ID), 10, 64)
 	if err != nil {

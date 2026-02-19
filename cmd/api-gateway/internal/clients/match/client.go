@@ -40,3 +40,10 @@ func (c *Client) GetUpcomingMatches(ctx context.Context, limit int32, clubID str
 		ClubId: strings.TrimSpace(clubID),
 	})
 }
+
+func (c *Client) GetClubs(ctx context.Context) (*matchv1.GetClubsResponse, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	return c.client.GetClubs(reqCtx, &matchv1.GetClubsRequest{})
+}

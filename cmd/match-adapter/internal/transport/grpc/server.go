@@ -91,6 +91,31 @@ func (s *serverAPI) GetUpcomingMatches(ctx context.Context, req *matchv1.GetUpco
 	return resp, nil
 }
 
+func (s *serverAPI) GetClubs(ctx context.Context, req *matchv1.GetClubsRequest) (*matchv1.GetClubsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	clubs, err := s.service.GetClubs(ctx)
+	if err != nil {
+		s.log.Error("GetClubs failed", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	resp := &matchv1.GetClubsResponse{
+		Clubs: make([]*matchv1.Club, 0, len(clubs)),
+	}
+	for _, club := range clubs {
+		resp.Clubs = append(resp.Clubs, &matchv1.Club{
+			ClubId: club.ID,
+			NameRu: club.NameRU,
+			NameEn: club.NameEN,
+		})
+	}
+
+	return resp, nil
+}
+
 func toProtoMatch(matchID int64, m models.Match) *matchv1.Match {
 	return &matchv1.Match{
 		MatchId:                matchID,

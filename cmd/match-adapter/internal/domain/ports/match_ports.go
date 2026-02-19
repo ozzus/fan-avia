@@ -10,6 +10,7 @@ import (
 type MatchRepository interface {
 	GetByID(ctx context.Context, id models.MatchID) (models.Match, error)
 	GetUpcoming(ctx context.Context, limit int, clubID string) ([]models.Match, error)
+	GetClubs(ctx context.Context) ([]models.Club, error)
 	Upsert(ctx context.Context, match models.Match) error
 }
 

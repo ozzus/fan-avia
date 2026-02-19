@@ -62,6 +62,7 @@ func main() {
 
 	airfareHandler := apihandlers.NewAirfareHandler(log, airfareClient, cfg.Clients.Airfare.Timeout, cfg.Defaults.OriginIATA)
 	matchHandler := apihandlers.NewMatchHandler(log, matchClient, cfg.Clients.Match.Timeout)
+	clubHandler := apihandlers.NewClubHandler(log, matchClient, cfg.Clients.Match.Timeout)
 	catalogTimeout := 20 * time.Second
 	if cfg.HTTP.WriteTimeout > 0 {
 		adjusted := cfg.HTTP.WriteTimeout - 500*time.Millisecond
@@ -77,6 +78,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthHandler)
 	mux.HandleFunc("/v1/stub", stubHandler(log))
+	mux.HandleFunc("/v1/clubs", clubHandler.GetClubs)
 	mux.HandleFunc("/v1/matches", matchHandler.GetMatches)
 	mux.HandleFunc("/v1/matches/upcoming", matchHandler.GetUpcomingMatches)
 	mux.HandleFunc("/v1/matches/upcoming-with-airfare", catalogHandler.GetUpcomingWithAirfare)

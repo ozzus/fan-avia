@@ -112,6 +112,17 @@ func (s *MatchService) GetUpcomingMatches(ctx context.Context, limit int, clubID
 	return matches, nil
 }
 
+func (s *MatchService) GetClubs(ctx context.Context) ([]models.Club, error) {
+	const op = "service.GetClubs"
+
+	clubs, err := s.repo.GetClubs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: get clubs from repo: %w", op, err)
+	}
+
+	return clubs, nil
+}
+
 func (s *MatchService) SyncUpcomingMatches(ctx context.Context, from time.Time, to time.Time, limit int) (int, error) {
 	const op = "service.SyncUpcomingMatches"
 

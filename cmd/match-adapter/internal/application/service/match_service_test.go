@@ -54,10 +54,13 @@ type repoMock struct {
 	getErr        error
 	upcoming      []models.Match
 	upcomingErr   error
+	clubs         []models.Club
+	clubsErr      error
 	upsertErr     error
 	upserted      []models.Match
 	getCalls      int
 	upcomingCalls int
+	clubsCalls    int
 	upsertCalls   int
 }
 
@@ -75,6 +78,11 @@ func (m *repoMock) Upsert(_ context.Context, match models.Match) error {
 func (m *repoMock) GetUpcoming(_ context.Context, _ int, _ string) ([]models.Match, error) {
 	m.upcomingCalls++
 	return m.upcoming, m.upcomingErr
+}
+
+func (m *repoMock) GetClubs(_ context.Context) ([]models.Club, error) {
+	m.clubsCalls++
+	return m.clubs, m.clubsErr
 }
 
 type cacheMock struct {
@@ -202,6 +210,28 @@ func TestGetUpcomingMatches_DefaultLimit(t *testing.T) {
 	}
 	if repo.upcomingCalls != 1 {
 		t.Fatalf("expected 1 repo call, got %d", repo.upcomingCalls)
+	}
+}
+
+func TestGetClubs(t *testing.T) {
+	repo := &repoMock{
+		clubs: []models.Club{
+			{ID: "1", NameRU: "Спартак Москва", NameEN: "Spartak Moscow"},
+			{ID: "3", NameRU: "Зенит", NameEN: "Zenit"},
+		},
+	}
+
+	svc := NewMatchService(zap.NewNop(), &sourceMock{}, &resolverMock{}, repo, &cacheMock{}, 10*time.Minute)
+
+	got, err := svc.GetClubs(context.Background())
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 clubs, got %d", len(got))
+	}
+	if repo.clubsCalls != 1 {
+		t.Fatalf("expected 1 repo call, got %d", repo.clubsCalls)
 	}
 }
 
