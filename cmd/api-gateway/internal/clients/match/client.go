@@ -2,6 +2,7 @@ package match
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	matchv1 "github.com/ozzus/fan-avia/protos/gen/go/match/v1"
@@ -30,9 +31,12 @@ func (c *Client) GetMatch(ctx context.Context, matchID int64) (*matchv1.GetMatch
 	return c.client.GetMatch(reqCtx, &matchv1.GetMatchRequest{MatchId: matchID})
 }
 
-func (c *Client) GetUpcomingMatches(ctx context.Context, limit int32) (*matchv1.GetUpcomingMatchesResponse, error) {
+func (c *Client) GetUpcomingMatches(ctx context.Context, limit int32, clubID string) (*matchv1.GetUpcomingMatchesResponse, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	return c.client.GetUpcomingMatches(reqCtx, &matchv1.GetUpcomingMatchesRequest{Limit: limit})
+	return c.client.GetUpcomingMatches(reqCtx, &matchv1.GetUpcomingMatchesRequest{
+		Limit:  limit,
+		ClubId: strings.TrimSpace(clubID),
+	})
 }

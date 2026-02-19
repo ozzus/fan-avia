@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -97,10 +98,11 @@ func (r *Repository) GetByID(ctx context.Context, id models.MatchID) (models.Mat
 	return match, nil
 }
 
-func (r *Repository) GetUpcoming(ctx context.Context, limit int) ([]models.Match, error) {
+func (r *Repository) GetUpcoming(ctx context.Context, limit int, clubID string) ([]models.Match, error) {
 	if limit <= 0 {
 		limit = 10
 	}
+	clubID = strings.TrimSpace(clubID)
 
 	const query = `
 		SELECT
@@ -114,11 +116,12 @@ func (r *Repository) GetUpcoming(ctx context.Context, limit int) ([]models.Match
 			COALESCE(club_away_id, '')
 		FROM matches
 		WHERE kickoff_utc >= now()
+		  AND ($2 = '' OR club_home_id = $2 OR club_away_id = $2)
 		ORDER BY kickoff_utc ASC
 		LIMIT $1
 	`
 
-	rows, err := r.db.Query(ctx, query, limit)
+	rows, err := r.db.Query(ctx, query, limit, clubID)
 	if err != nil {
 		return nil, fmt.Errorf("query upcoming matches: %w", err)
 	}

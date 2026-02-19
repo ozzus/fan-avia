@@ -94,18 +94,25 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	clubID, _, clubErr := parsePositiveIntQuery(r, "club_id")
+	if clubErr != "" {
+		writeError(w, http.StatusBadRequest, "club_id must be a positive integer")
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
 	defer cancel()
 
-	upcomingResp, err := h.matchClient.GetUpcomingMatches(ctx, limit)
+	upcomingResp, err := h.matchClient.GetUpcomingMatches(ctx, limit, clubID)
 	if err != nil {
 		h.log.Error("get upcoming matches failed", zap.Error(err), zap.Int32("limit", limit))
 		writeError(w, http.StatusBadGateway, "match adapter error")
 		return
 	}
 
-	items := make([]upcomingWithAirfareItem, 0, len(upcomingResp.GetMatches()))
-	for _, m := range upcomingResp.GetMatches() {
+	matches := upcomingResp.GetMatches()
+	items := make([]upcomingWithAirfareItem, 0, len(matches))
+	for _, m := range matches {
 		items = append(items, upcomingWithAirfareItem{Match: mapMatch(m)})
 	}
 
@@ -118,10 +125,10 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 	}
 
 	sem := make(chan struct{}, maxConcurrentAirfareCalls)
-	resultsCh := make(chan airfareResult, len(upcomingResp.GetMatches()))
+	resultsCh := make(chan airfareResult, len(matches))
 	var wg sync.WaitGroup
 
-	for i, m := range upcomingResp.GetMatches() {
+	for i, m := range matches {
 		if strings.EqualFold(strings.TrimSpace(items[i].Match.DestinationAirportIATA), originIATA) {
 			resultsCh <- airfareResult{
 				index:      i,

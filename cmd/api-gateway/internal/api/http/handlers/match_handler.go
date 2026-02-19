@@ -132,10 +132,16 @@ func (h *MatchHandler) GetUpcomingMatches(w http.ResponseWriter, r *http.Request
 		limit = int32(parsed)
 	}
 
+	clubID, _, clubErr := parsePositiveIntQuery(r, "club_id")
+	if clubErr != "" {
+		writeError(w, http.StatusBadRequest, "club_id must be a positive integer")
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
 	defer cancel()
 
-	resp, err := h.client.GetUpcomingMatches(ctx, limit)
+	resp, err := h.client.GetUpcomingMatches(ctx, limit, clubID)
 	if err != nil {
 		h.log.Error("get upcoming matches failed", zap.Error(err), zap.Int32("limit", limit))
 		writeError(w, http.StatusBadGateway, "match adapter error")

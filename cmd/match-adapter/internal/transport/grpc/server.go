@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/application/service"
 	derr "github.com/ozzus/fan-avia/cmd/match-adapter/internal/domain/errors"
@@ -60,10 +61,18 @@ func (s *serverAPI) GetUpcomingMatches(ctx context.Context, req *matchv1.GetUpco
 	if limit <= 0 {
 		limit = 10
 	}
+	clubID := strings.TrimSpace(req.GetClubId())
+	if clubID != "" {
+		parsed, err := strconv.ParseInt(clubID, 10, 64)
+		if err != nil || parsed <= 0 {
+			return nil, status.Error(codes.InvalidArgument, "club_id must be a positive integer")
+		}
+		clubID = strconv.FormatInt(parsed, 10)
+	}
 
-	matches, err := s.service.GetUpcomingMatches(ctx, limit)
+	matches, err := s.service.GetUpcomingMatches(ctx, limit, clubID)
 	if err != nil {
-		s.log.Error("GetUpcomingMatches failed", zap.Int("limit", limit), zap.Error(err))
+		s.log.Error("GetUpcomingMatches failed", zap.Int("limit", limit), zap.String("club_id", clubID), zap.Error(err))
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 

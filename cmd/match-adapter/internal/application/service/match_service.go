@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	derr "github.com/ozzus/fan-avia/cmd/match-adapter/internal/domain/errors"
@@ -97,12 +98,13 @@ func (s *MatchService) GetMatch(ctx context.Context, id models.MatchID) (models.
 	return match, nil
 }
 
-func (s *MatchService) GetUpcomingMatches(ctx context.Context, limit int) ([]models.Match, error) {
+func (s *MatchService) GetUpcomingMatches(ctx context.Context, limit int, clubID string) ([]models.Match, error) {
 	const op = "service.GetUpcomingMatches"
 
 	limit = normalizeUpcomingLimit(limit)
+	clubID = strings.TrimSpace(clubID)
 
-	matches, err := s.repo.GetUpcoming(ctx, limit)
+	matches, err := s.repo.GetUpcoming(ctx, limit, clubID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: get upcoming matches from repo: %w", op, err)
 	}
