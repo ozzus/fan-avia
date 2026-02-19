@@ -141,15 +141,21 @@ func (h *MatchHandler) GetUpcomingMatches(w http.ResponseWriter, r *http.Request
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
 	defer cancel()
 
-	resp, err := h.client.GetUpcomingMatches(ctx, limit, clubID)
+	fetchLimit := limit
+	if clubID != "" && fetchLimit < 100 {
+		fetchLimit = 100
+	}
+
+	resp, err := h.client.GetUpcomingMatches(ctx, fetchLimit, clubID)
 	if err != nil {
 		h.log.Error("get upcoming matches failed", zap.Error(err), zap.Int32("limit", limit))
 		writeError(w, http.StatusBadGateway, "match adapter error")
 		return
 	}
 
-	result := make([]matchResponse, 0, len(resp.GetMatches()))
-	for _, m := range resp.GetMatches() {
+	matches := cutMatchesByLimit(filterMatchesByClubID(resp.GetMatches(), clubID), limit)
+	result := make([]matchResponse, 0, len(matches))
+	for _, m := range matches {
 		result = append(result, mapMatch(m))
 	}
 

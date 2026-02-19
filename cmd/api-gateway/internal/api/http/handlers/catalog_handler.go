@@ -17,6 +17,7 @@ import (
 const (
 	defaultUpcomingWithAirfareLimit = 12
 	maxUpcomingWithAirfareLimit     = 30
+	maxMatchAdapterUpcomingLimit    = 100
 	defaultUpcomingWithAirfareTO    = 20 * time.Second
 	maxConcurrentAirfareCalls       = 4
 )
@@ -103,14 +104,19 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
 	defer cancel()
 
-	upcomingResp, err := h.matchClient.GetUpcomingMatches(ctx, limit, clubID)
+	fetchLimit := limit
+	if clubID != "" && fetchLimit < maxMatchAdapterUpcomingLimit {
+		fetchLimit = maxMatchAdapterUpcomingLimit
+	}
+
+	upcomingResp, err := h.matchClient.GetUpcomingMatches(ctx, fetchLimit, clubID)
 	if err != nil {
 		h.log.Error("get upcoming matches failed", zap.Error(err), zap.Int32("limit", limit))
 		writeError(w, http.StatusBadGateway, "match adapter error")
 		return
 	}
 
-	matches := upcomingResp.GetMatches()
+	matches := cutMatchesByLimit(filterMatchesByClubID(upcomingResp.GetMatches(), clubID), limit)
 	items := make([]upcomingWithAirfareItem, 0, len(matches))
 	for _, m := range matches {
 		items = append(items, upcomingWithAirfareItem{Match: mapMatch(m)})
