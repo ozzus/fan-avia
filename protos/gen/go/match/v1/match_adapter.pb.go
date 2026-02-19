@@ -113,6 +113,7 @@ func (x *GetMatchResponse) GetMatch() *Match {
 type GetUpcomingMatchesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	ClubId        string                 `protobuf:"bytes,2,opt,name=club_id,json=clubId,proto3" json:"club_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -152,6 +153,13 @@ func (x *GetUpcomingMatchesRequest) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *GetUpcomingMatchesRequest) GetClubId() string {
+	if x != nil {
+		return x.ClubId
+	}
+	return ""
 }
 
 type GetUpcomingMatchesResponse struct {
@@ -306,9 +314,10 @@ const file_match_v1_match_adapter_proto_rawDesc = "" +
 	"\x0fGetMatchRequest\x12\x19\n" +
 	"\bmatch_id\x18\x01 \x01(\x03R\amatchId\"9\n" +
 	"\x10GetMatchResponse\x12%\n" +
-	"\x05match\x18\x01 \x01(\v2\x0f.match.v1.MatchR\x05match\"1\n" +
+	"\x05match\x18\x01 \x01(\v2\x0f.match.v1.MatchR\x05match\"J\n" +
 	"\x19GetUpcomingMatchesRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\x05R\x05limit\"G\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x17\n" +
+	"\aclub_id\x18\x02 \x01(\tR\x06clubId\"G\n" +
 	"\x1aGetUpcomingMatchesResponse\x12)\n" +
 	"\amatches\x18\x01 \x03(\v2\x0f.match.v1.MatchR\amatches\"\xae\x02\n" +
 	"\x05Match\x12\x19\n" +

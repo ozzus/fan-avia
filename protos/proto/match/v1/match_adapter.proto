@@ -21,6 +21,7 @@ message GetMatchResponse {
 
 message GetUpcomingMatchesRequest {
   int32 limit = 1;
+  string club_id = 2;
 }
 
 message GetUpcomingMatchesResponse {
