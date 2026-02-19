@@ -72,7 +72,7 @@ func (m *repoMock) Upsert(_ context.Context, match models.Match) error {
 	return m.upsertErr
 }
 
-func (m *repoMock) GetUpcoming(_ context.Context, _ int) ([]models.Match, error) {
+func (m *repoMock) GetUpcoming(_ context.Context, _ int, _ string) ([]models.Match, error) {
 	m.upcomingCalls++
 	return m.upcoming, m.upcomingErr
 }
@@ -193,7 +193,7 @@ func TestGetUpcomingMatches_DefaultLimit(t *testing.T) {
 	}
 	svc := NewMatchService(zap.NewNop(), &sourceMock{}, &resolverMock{}, repo, &cacheMock{}, 10*time.Minute)
 
-	got, err := svc.GetUpcomingMatches(context.Background(), 0)
+	got, err := svc.GetUpcomingMatches(context.Background(), 0, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
