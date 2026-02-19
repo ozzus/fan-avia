@@ -7,9 +7,17 @@ import (
 )
 
 func parsePositiveIntQuery(r *http.Request, key string) (value string, present bool, errMsg string) {
-	raw := strings.TrimSpace(r.URL.Query().Get(key))
-	if raw == "" {
+	values, exists := r.URL.Query()[key]
+	if !exists {
 		return "", false, ""
+	}
+	if len(values) == 0 {
+		return "", true, "invalid"
+	}
+
+	raw := strings.TrimSpace(values[0])
+	if raw == "" {
+		return "", true, "invalid"
 	}
 
 	parsed, err := strconv.ParseInt(raw, 10, 64)
