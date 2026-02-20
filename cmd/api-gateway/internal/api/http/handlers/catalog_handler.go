@@ -31,11 +31,15 @@ type CatalogHandler struct {
 }
 
 type upcomingWithAirfareItem struct {
-	Match        matchResponse `json:"match"`
-	MinPrice     *int64        `json:"min_price,omitempty"`
-	BestSlot     string        `json:"best_slot,omitempty"`
-	BestDate     string        `json:"best_date,omitempty"`
-	AirfareError string        `json:"airfare_error,omitempty"`
+	Match              matchResponse `json:"match"`
+	MinPrice           *int64        `json:"min_price,omitempty"`
+	BestSlot           string        `json:"best_slot,omitempty"`
+	BestDate           string        `json:"best_date,omitempty"`
+	BestOutboundPrice  *int64        `json:"best_outbound_price,omitempty"`
+	BestReturnPrice    *int64        `json:"best_return_price,omitempty"`
+	BestReturnDate     string        `json:"best_return_date,omitempty"`
+	BestRoundTripPrice *int64        `json:"best_round_trip_price,omitempty"`
+	AirfareError       string        `json:"airfare_error,omitempty"`
 }
 
 type airfareLoadError struct {
@@ -123,11 +127,15 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 	}
 
 	type airfareResult struct {
-		index      int
-		minPrice   *int64
-		bestSlot   string
-		bestDate   string
-		errMessage string
+		index              int
+		minPrice           *int64
+		bestSlot           string
+		bestDate           string
+		bestOutboundPrice  *int64
+		bestReturnPrice    *int64
+		bestReturnDate     string
+		bestRoundTripPrice *int64
+		errMessage         string
 	}
 
 	sem := make(chan struct{}, maxConcurrentAirfareCalls)
@@ -158,7 +166,7 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 				return
 			}
 
-			minPrice, bestSlot, bestDate := findBestFare(airfareResp.GetSlots())
+			minPrice, bestSlot, bestDate, bestOutboundPrice, bestReturnPrice, bestReturnDate, bestRoundTripPrice := findBestFare(airfareResp.GetSlots())
 			if minPrice == nil {
 				resultsCh <- airfareResult{
 					index:      idx,
@@ -168,10 +176,14 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 			}
 
 			resultsCh <- airfareResult{
-				index:    idx,
-				minPrice: minPrice,
-				bestSlot: bestSlot,
-				bestDate: bestDate,
+				index:              idx,
+				minPrice:           minPrice,
+				bestSlot:           bestSlot,
+				bestDate:           bestDate,
+				bestOutboundPrice:  bestOutboundPrice,
+				bestReturnPrice:    bestReturnPrice,
+				bestReturnDate:     bestReturnDate,
+				bestRoundTripPrice: bestRoundTripPrice,
 			}
 		}(i, m.GetMatchId())
 	}
@@ -191,6 +203,10 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 		resp.Items[r.index].MinPrice = r.minPrice
 		resp.Items[r.index].BestSlot = r.bestSlot
 		resp.Items[r.index].BestDate = r.bestDate
+		resp.Items[r.index].BestOutboundPrice = r.bestOutboundPrice
+		resp.Items[r.index].BestReturnPrice = r.bestReturnPrice
+		resp.Items[r.index].BestReturnDate = r.bestReturnDate
+		resp.Items[r.index].BestRoundTripPrice = r.bestRoundTripPrice
 		resp.Items[r.index].AirfareError = r.errMessage
 		if r.errMessage != "" {
 			resp.Errors = append(resp.Errors, airfareLoadError{
@@ -203,12 +219,19 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusOK, resp)
 }
 
-func findBestFare(slots []*airfarev1.FareSlot) (*int64, string, string) {
+func findBestFare(slots []*airfarev1.FareSlot) (*int64, string, string, *int64, *int64, string, *int64) {
 	var (
 		minPrice int64
 		hasPrice bool
 		bestSlot string
 		bestDate string
+
+		bestOutboundPrice int64
+		hasOutboundPrice  bool
+
+		bestReturnPrice int64
+		hasReturnPrice  bool
+		bestReturnDate  string
 	)
 
 	for _, slot := range slots {
@@ -219,12 +242,45 @@ func findBestFare(slots []*airfarev1.FareSlot) (*int64, string, string) {
 				bestSlot = slot.GetSlot().String()
 				bestDate = slot.GetDate()
 			}
+
+			switch slot.GetDirection() {
+			case airfarev1.FareDirection_FARE_DIRECTION_OUTBOUND:
+				if !hasOutboundPrice || price < bestOutboundPrice {
+					hasOutboundPrice = true
+					bestOutboundPrice = price
+				}
+			case airfarev1.FareDirection_FARE_DIRECTION_RETURN:
+				if !hasReturnPrice || price < bestReturnPrice {
+					hasReturnPrice = true
+					bestReturnPrice = price
+					bestReturnDate = slot.GetDate()
+				}
+			}
 		}
 	}
 
 	if !hasPrice {
-		return nil, "", ""
+		return nil, "", "", nil, nil, "", nil
 	}
 
-	return &minPrice, bestSlot, bestDate
+	var outboundPricePtr *int64
+	if hasOutboundPrice {
+		outboundPricePtr = int64Ptr(bestOutboundPrice)
+	}
+
+	var returnPricePtr *int64
+	if hasReturnPrice {
+		returnPricePtr = int64Ptr(bestReturnPrice)
+	}
+
+	var roundTripPricePtr *int64
+	if hasOutboundPrice && hasReturnPrice {
+		roundTripPricePtr = int64Ptr(bestOutboundPrice + bestReturnPrice)
+	}
+
+	return &minPrice, bestSlot, bestDate, outboundPricePtr, returnPricePtr, bestReturnDate, roundTripPricePtr
+}
+
+func int64Ptr(v int64) *int64 {
+	return &v
 }
