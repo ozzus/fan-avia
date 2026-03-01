@@ -3,6 +3,7 @@ package mappers
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/domain/models"
@@ -34,15 +35,30 @@ func clubIDToString(id *int64) string {
 }
 
 func parseKickoff(value string) (time.Time, error) {
-	layouts := []string{
-		time.RFC3339,
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}, fmt.Errorf("unsupported datetime format: %q", value)
+	}
+
+	// RFC3339 values include explicit timezone and can be parsed directly.
+	if t, err := time.Parse(time.RFC3339, value); err == nil {
+		return t, nil
+	}
+
+	// Premierliga returns local kickoff time in formats without timezone.
+	loc := time.FixedZone("MSK", 3*60*60)
+	if moscow, err := time.LoadLocation("Europe/Moscow"); err == nil {
+		loc = moscow
+	}
+
+	localLayouts := []string{
 		"2006-01-02UTC15:04:05",
 		"2006-01-02 15:04:05",
 		"2006-01-02T15:04:05",
 	}
 
-	for _, layout := range layouts {
-		t, err := time.Parse(layout, value)
+	for _, layout := range localLayouts {
+		t, err := time.ParseInLocation(layout, value, loc)
 		if err == nil {
 			return t, nil
 		}

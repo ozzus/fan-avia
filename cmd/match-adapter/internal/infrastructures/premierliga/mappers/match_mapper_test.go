@@ -46,3 +46,21 @@ func TestToDomainMatch_InvalidDate(t *testing.T) {
 		t.Fatal("expected error for invalid date")
 	}
 }
+
+func TestToDomainMatch_PremierligaLocalTimeConvertedToUTC(t *testing.T) {
+	resp := dto.GetFullDataMatchResponse{
+		ID:   16229,
+		Date: "2026-02-28UTC12:00:00",
+	}
+
+	match, err := ToDomainMatch(resp)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// 12:00 MSK should be stored as 09:00 UTC.
+	want := time.Date(2026, 2, 28, 9, 0, 0, 0, time.UTC)
+	if !match.KickoffUTC.Equal(want) {
+		t.Fatalf("unexpected kickoff: got %v, want %v", match.KickoffUTC, want)
+	}
+}
