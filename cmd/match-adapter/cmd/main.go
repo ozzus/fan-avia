@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -20,6 +21,7 @@ import (
 	"github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/premierliga"
 	plclient "github.com/ozzus/fan-avia/cmd/match-adapter/internal/infrastructures/premierliga/http/client"
 	grpcapi "github.com/ozzus/fan-avia/cmd/match-adapter/internal/transport/grpc"
+	diaghandler "github.com/ozzus/fan-avia/cmd/match-adapter/internal/transport/handler"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -59,12 +61,13 @@ func main() {
 	defer repo.Close()
 
 	httpClient := &http.Client{Timeout: cfg.Premierliga.Timeout}
-	matchSource := premierliga.NewSource(plclient.NewClient(
+	plAPIClient := plclient.NewClient(
 		cfg.Premierliga.BaseURL,
 		httpClient,
 		cfg.Premierliga.RetryMaxAttempts,
 		cfg.Premierliga.RetryBaseInterval,
-	))
+	)
+	matchSource := premierliga.NewSource(plAPIClient)
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr,
 		Password: cfg.Redis.Password,
@@ -78,6 +81,33 @@ func main() {
 
 	matchCache := matchredis.NewMatchCache(redisClient)
 	matchService := service.NewMatchService(log, matchSource, repo, repo, matchCache, cfg.MatchCacheTTL)
+
+	var diagnosticSrv *http.Server
+	diagnosticErrCh := make(chan error, 1)
+	if cfg.DebugHTTP.Enabled {
+		diagnosticAddr := fmt.Sprintf("%s:%d", cfg.DebugHTTP.Host, cfg.DebugHTTP.Port)
+		diagnosticHandler := diaghandler.NewDiagnosticHandler(log, repo, plAPIClient, cfg.DebugHTTP.Timeout)
+		diagnosticSrv = &http.Server{
+			Addr:    diagnosticAddr,
+			Handler: diagnosticHandler,
+		}
+
+		log.Info("diagnostic http starting", zap.String("http_addr", diagnosticAddr))
+		go func() {
+			if err := diagnosticSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				diagnosticErrCh <- err
+			}
+		}()
+	}
+
+	grpcApp := grpcapp.New(log, cfg.GRPC.Host, cfg.GRPC.Port, func(s *grpc.Server) {
+		grpcapi.Register(s, log, matchService)
+	})
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- grpcApp.Run()
+	}()
 
 	if cfg.MatchSync.Enabled {
 		interval := cfg.MatchSync.Interval
@@ -115,9 +145,9 @@ func main() {
 			)
 		}
 
-		runSync("startup")
-		ticker := time.NewTicker(interval)
 		go func() {
+			runSync("startup")
+			ticker := time.NewTicker(interval)
 			defer ticker.Stop()
 			for {
 				select {
@@ -130,15 +160,6 @@ func main() {
 		}()
 	}
 
-	grpcApp := grpcapp.New(log, cfg.GRPC.Host, cfg.GRPC.Port, func(s *grpc.Server) {
-		grpcapi.Register(s, log, matchService)
-	})
-
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- grpcApp.Run()
-	}()
-
 	select {
 	case <-ctx.Done():
 		log.Info("shutdown signal received")
@@ -146,6 +167,21 @@ func main() {
 	case err := <-errCh:
 		if err != nil {
 			log.Error("gRPC server stopped", zap.Error(err))
+		}
+		stop()
+	case err := <-diagnosticErrCh:
+		if err != nil {
+			log.Error("diagnostic http server stopped", zap.Error(err))
+		}
+		stop()
+		grpcApp.Stop()
+	}
+
+	if diagnosticSrv != nil {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := diagnosticSrv.Shutdown(shutdownCtx); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Warn("failed to shutdown diagnostic http server", zap.Error(err))
 		}
 	}
 }

@@ -20,9 +20,13 @@ services:
     container_name: match-adapter
     ports:
       - "44045:44045"
+      - "8086:8086"
     env_file:
       - ./cmd/match-adapter/.env
     environment:
+      DEBUG_HTTP_ENABLED: "true"
+      DEBUG_HTTP_HOST: "0.0.0.0"
+      DEBUG_HTTP_PORT: "8086"
       REDIS_ADDR: redis:6379
       JAEGER: jaeger:14268
     depends_on:

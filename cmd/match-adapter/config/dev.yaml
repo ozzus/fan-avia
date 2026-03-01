@@ -3,11 +3,16 @@ log:
   level: "info"
 db:
   sslmode: "require"
+debug_http:
+  enabled: false
+  host: "127.0.0.1"
+  port: 8086
+  timeout: 5s
 premierliga:
   base_url: "https://api.premierliga.ru"
 match_sync:
   enabled: true
   interval: 15m
-  horizon: 720h
-  limit: 50
+  horizon: 8760h
+  limit: 200
   request_timeout: 30s
