@@ -34,6 +34,24 @@ func TestExtractPrices_ArriveNotLaterConstraint(t *testing.T) {
 	}
 }
 
+func TestExtractPrices_ArriveWindowConstraint(t *testing.T) {
+	arriveNotBefore := time.Date(2026, 2, 27, 15, 30, 0, 0, time.UTC)
+	arriveNotLater := time.Date(2026, 2, 27, 17, 30, 0, 0, time.UTC)
+	got := ExtractPrices([]dto.PriceForDateItem{
+		{Price: 1800, DepartureAt: "2026-02-27T13:00:00Z", DurationTo: 120}, // arrival 15:00 fail
+		{Price: 2000, DepartureAt: "2026-02-27T13:30:00Z", DurationTo: 120}, // arrival 15:30 pass
+		{Price: 1500, DepartureAt: "2026-02-27T15:30:00Z", DurationTo: 120}, // arrival 17:30 pass
+		{Price: 1200, DepartureAt: "2026-02-27T15:45:00Z", DurationTo: 120}, // arrival 17:45 fail
+	}, ports.FareSearch{
+		ArriveNotBeforeUTC: &arriveNotBefore,
+		ArriveNotLaterUTC:  &arriveNotLater,
+	})
+
+	if len(got) != 2 || got[0] != 1500 || got[1] != 2000 {
+		t.Fatalf("unexpected prices with arrive window: %v", got)
+	}
+}
+
 func TestExtractPrices_DepartNotBeforeConstraint(t *testing.T) {
 	limit := time.Date(2026, 2, 27, 15, 0, 0, 0, time.UTC)
 	got := ExtractPrices([]dto.PriceForDateItem{

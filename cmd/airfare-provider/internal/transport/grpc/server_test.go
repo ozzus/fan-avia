@@ -33,7 +33,7 @@ func (grpcTestFareSource) GetPrices(ctx context.Context, search ports.FareSearch
 }
 
 func TestGetAirfareByMatch_InvalidOrigin(t *testing.T) {
-	srv := &serverAPI{service: service.NewAirfareService(zap.NewNop(), grpcTestMatchReader{}, grpcTestFareSource{}, nil, 0)}
+	srv := &serverAPI{service: service.NewAirfareService(zap.NewNop(), grpcTestMatchReader{}, grpcTestFareSource{}, nil, 0, service.DefaultMatchDayWindowPolicy())}
 
 	_, err := srv.GetAirfareByMatch(context.Background(), &airfarev1.GetAirfareByMatchRequest{
 		MatchId:    16114,
@@ -48,7 +48,7 @@ func TestGetAirfareByMatch_InvalidOrigin(t *testing.T) {
 }
 
 func TestGetAirfareByMatch_MapsNotFound(t *testing.T) {
-	srv := &serverAPI{service: service.NewAirfareService(zap.NewNop(), grpcTestMatchReader{err: derr.ErrMatchNotFound}, grpcTestFareSource{}, nil, 0)}
+	srv := &serverAPI{service: service.NewAirfareService(zap.NewNop(), grpcTestMatchReader{err: derr.ErrMatchNotFound}, grpcTestFareSource{}, nil, 0, service.DefaultMatchDayWindowPolicy())}
 
 	_, err := srv.GetAirfareByMatch(context.Background(), &airfarev1.GetAirfareByMatchRequest{
 		MatchId:    16114,
@@ -76,6 +76,7 @@ func TestGetAirfareByMatch_Success(t *testing.T) {
 			grpcTestFareSource{},
 			nil,
 			0,
+			service.DefaultMatchDayWindowPolicy(),
 		),
 	}
 
@@ -91,5 +92,8 @@ func TestGetAirfareByMatch_Success(t *testing.T) {
 	}
 	if len(resp.GetSlots()) != 6 {
 		t.Fatalf("unexpected slots count: got %d want 6", len(resp.GetSlots()))
+	}
+	if resp.GetSlots()[0].GetWindowLevel() != airfarev1.FareWindowLevel_FARE_WINDOW_LEVEL_STRICT {
+		t.Fatalf("unexpected window level: got %v want %v", resp.GetSlots()[0].GetWindowLevel(), airfarev1.FareWindowLevel_FARE_WINDOW_LEVEL_STRICT)
 	}
 }
