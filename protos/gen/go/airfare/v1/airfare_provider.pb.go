@@ -242,6 +242,58 @@ func (FareSlotType) EnumDescriptor() ([]byte, []int) {
 	return file_airfare_v1_airfare_provider_proto_rawDescGZIP(), []int{3}
 }
 
+type FareWindowLevel int32
+
+const (
+	FareWindowLevel_FARE_WINDOW_LEVEL_UNSPECIFIED FareWindowLevel = 0
+	FareWindowLevel_FARE_WINDOW_LEVEL_STRICT      FareWindowLevel = 1
+	FareWindowLevel_FARE_WINDOW_LEVEL_SOFT_1      FareWindowLevel = 2
+	FareWindowLevel_FARE_WINDOW_LEVEL_SOFT_2      FareWindowLevel = 3
+)
+
+// Enum value maps for FareWindowLevel.
+var (
+	FareWindowLevel_name = map[int32]string{
+		0: "FARE_WINDOW_LEVEL_UNSPECIFIED",
+		1: "FARE_WINDOW_LEVEL_STRICT",
+		2: "FARE_WINDOW_LEVEL_SOFT_1",
+		3: "FARE_WINDOW_LEVEL_SOFT_2",
+	}
+	FareWindowLevel_value = map[string]int32{
+		"FARE_WINDOW_LEVEL_UNSPECIFIED": 0,
+		"FARE_WINDOW_LEVEL_STRICT":      1,
+		"FARE_WINDOW_LEVEL_SOFT_1":      2,
+		"FARE_WINDOW_LEVEL_SOFT_2":      3,
+	}
+)
+
+func (x FareWindowLevel) Enum() *FareWindowLevel {
+	p := new(FareWindowLevel)
+	*p = x
+	return p
+}
+
+func (x FareWindowLevel) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FareWindowLevel) Descriptor() protoreflect.EnumDescriptor {
+	return file_airfare_v1_airfare_provider_proto_enumTypes[4].Descriptor()
+}
+
+func (FareWindowLevel) Type() protoreflect.EnumType {
+	return &file_airfare_v1_airfare_provider_proto_enumTypes[4]
+}
+
+func (x FareWindowLevel) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FareWindowLevel.Descriptor instead.
+func (FareWindowLevel) EnumDescriptor() ([]byte, []int) {
+	return file_airfare_v1_airfare_provider_proto_rawDescGZIP(), []int{4}
+}
+
 type GetPricesForRulesRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	OriginIata      string                 `protobuf:"bytes,1,opt,name=origin_iata,json=originIata,proto3" json:"origin_iata,omitempty"`
@@ -704,6 +756,7 @@ type FareSlot struct {
 	Direction     FareDirection          `protobuf:"varint,2,opt,name=direction,proto3,enum=airfare.v1.FareDirection" json:"direction,omitempty"`
 	Date          string                 `protobuf:"bytes,3,opt,name=date,proto3" json:"date,omitempty"` // YYYY-MM-DD (UTC)
 	Prices        []int64                `protobuf:"varint,4,rep,packed,name=prices,proto3" json:"prices,omitempty"`
+	WindowLevel   FareWindowLevel        `protobuf:"varint,5,opt,name=window_level,json=windowLevel,proto3,enum=airfare.v1.FareWindowLevel" json:"window_level,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -766,6 +819,13 @@ func (x *FareSlot) GetPrices() []int64 {
 	return nil
 }
 
+func (x *FareSlot) GetWindowLevel() FareWindowLevel {
+	if x != nil {
+		return x.WindowLevel
+	}
+	return FareWindowLevel_FARE_WINDOW_LEVEL_UNSPECIFIED
+}
+
 var File_airfare_v1_airfare_provider_proto protoreflect.FileDescriptor
 
 const file_airfare_v1_airfare_provider_proto_rawDesc = "" +
@@ -804,12 +864,13 @@ const file_airfare_v1_airfare_provider_proto_rawDesc = "" +
 	"\x19GetAirfareByMatchResponse\x12\x19\n" +
 	"\bmatch_id\x18\x01 \x01(\x03R\amatchId\x12!\n" +
 	"\ftickets_link\x18\x02 \x01(\tR\vticketsLink\x12*\n" +
-	"\x05slots\x18\x03 \x03(\v2\x14.airfare.v1.FareSlotR\x05slots\"\x9d\x01\n" +
+	"\x05slots\x18\x03 \x03(\v2\x14.airfare.v1.FareSlotR\x05slots\"\xdd\x01\n" +
 	"\bFareSlot\x12,\n" +
 	"\x04slot\x18\x01 \x01(\x0e2\x18.airfare.v1.FareSlotTypeR\x04slot\x127\n" +
 	"\tdirection\x18\x02 \x01(\x0e2\x19.airfare.v1.FareDirectionR\tdirection\x12\x12\n" +
 	"\x04date\x18\x03 \x01(\tR\x04date\x12\x16\n" +
-	"\x06prices\x18\x04 \x03(\x03R\x06prices*T\n" +
+	"\x06prices\x18\x04 \x03(\x03R\x06prices\x12>\n" +
+	"\fwindow_level\x18\x05 \x01(\x0e2\x1b.airfare.v1.FareWindowLevelR\vwindowLevel*T\n" +
 	"\tDirection\x12\x19\n" +
 	"\x15DIRECTION_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12DIRECTION_OUTBOUND\x10\x01\x12\x14\n" +
@@ -833,7 +894,12 @@ const file_airfare_v1_airfare_provider_proto_rawDesc = "" +
 	"\x1aFARE_SLOT_OUT_D0_ARRIVE_BY\x10\x03\x12!\n" +
 	"\x1dFARE_SLOT_RET_D0_DEPART_AFTER\x10\x04\x12\x1a\n" +
 	"\x16FARE_SLOT_RET_D_PLUS_1\x10\x05\x12\x1a\n" +
-	"\x16FARE_SLOT_RET_D_PLUS_2\x10\x062\xdc\x01\n" +
+	"\x16FARE_SLOT_RET_D_PLUS_2\x10\x06*\x8e\x01\n" +
+	"\x0fFareWindowLevel\x12!\n" +
+	"\x1dFARE_WINDOW_LEVEL_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18FARE_WINDOW_LEVEL_STRICT\x10\x01\x12\x1c\n" +
+	"\x18FARE_WINDOW_LEVEL_SOFT_1\x10\x02\x12\x1c\n" +
+	"\x18FARE_WINDOW_LEVEL_SOFT_2\x10\x032\xdc\x01\n" +
 	"\x16AirfareProviderService\x12`\n" +
 	"\x11GetPricesForRules\x12$.airfare.v1.GetPricesForRulesRequest\x1a%.airfare.v1.GetPricesForRulesResponse\x12`\n" +
 	"\x11GetAirfareByMatch\x12$.airfare.v1.GetAirfareByMatchRequest\x1a%.airfare.v1.GetAirfareByMatchResponseB>Z<github.com/ozzus/fan-avia/protos/gen/go/airfare/v1;airfarev1b\x06proto3"
@@ -850,46 +916,48 @@ func file_airfare_v1_airfare_provider_proto_rawDescGZIP() []byte {
 	return file_airfare_v1_airfare_provider_proto_rawDescData
 }
 
-var file_airfare_v1_airfare_provider_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_airfare_v1_airfare_provider_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_airfare_v1_airfare_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_airfare_v1_airfare_provider_proto_goTypes = []any{
 	(Direction)(0),                    // 0: airfare.v1.Direction
 	(RuleType)(0),                     // 1: airfare.v1.RuleType
 	(FareDirection)(0),                // 2: airfare.v1.FareDirection
 	(FareSlotType)(0),                 // 3: airfare.v1.FareSlotType
-	(*GetPricesForRulesRequest)(nil),  // 4: airfare.v1.GetPricesForRulesRequest
-	(*Rule)(nil),                      // 5: airfare.v1.Rule
-	(*TimeConstraint)(nil),            // 6: airfare.v1.TimeConstraint
-	(*GetPricesForRulesResponse)(nil), // 7: airfare.v1.GetPricesForRulesResponse
-	(*RuleResult)(nil),                // 8: airfare.v1.RuleResult
-	(*PriceOption)(nil),               // 9: airfare.v1.PriceOption
-	(*GetAirfareByMatchRequest)(nil),  // 10: airfare.v1.GetAirfareByMatchRequest
-	(*GetAirfareByMatchResponse)(nil), // 11: airfare.v1.GetAirfareByMatchResponse
-	(*FareSlot)(nil),                  // 12: airfare.v1.FareSlot
-	(*timestamppb.Timestamp)(nil),     // 13: google.protobuf.Timestamp
+	(FareWindowLevel)(0),              // 4: airfare.v1.FareWindowLevel
+	(*GetPricesForRulesRequest)(nil),  // 5: airfare.v1.GetPricesForRulesRequest
+	(*Rule)(nil),                      // 6: airfare.v1.Rule
+	(*TimeConstraint)(nil),            // 7: airfare.v1.TimeConstraint
+	(*GetPricesForRulesResponse)(nil), // 8: airfare.v1.GetPricesForRulesResponse
+	(*RuleResult)(nil),                // 9: airfare.v1.RuleResult
+	(*PriceOption)(nil),               // 10: airfare.v1.PriceOption
+	(*GetAirfareByMatchRequest)(nil),  // 11: airfare.v1.GetAirfareByMatchRequest
+	(*GetAirfareByMatchResponse)(nil), // 12: airfare.v1.GetAirfareByMatchResponse
+	(*FareSlot)(nil),                  // 13: airfare.v1.FareSlot
+	(*timestamppb.Timestamp)(nil),     // 14: google.protobuf.Timestamp
 }
 var file_airfare_v1_airfare_provider_proto_depIdxs = []int32{
-	5,  // 0: airfare.v1.GetPricesForRulesRequest.rules:type_name -> airfare.v1.Rule
+	6,  // 0: airfare.v1.GetPricesForRulesRequest.rules:type_name -> airfare.v1.Rule
 	1,  // 1: airfare.v1.Rule.type:type_name -> airfare.v1.RuleType
 	0,  // 2: airfare.v1.Rule.direction:type_name -> airfare.v1.Direction
-	13, // 3: airfare.v1.Rule.day_utc:type_name -> google.protobuf.Timestamp
-	6,  // 4: airfare.v1.Rule.time_constraint:type_name -> airfare.v1.TimeConstraint
-	13, // 5: airfare.v1.TimeConstraint.not_after:type_name -> google.protobuf.Timestamp
-	13, // 6: airfare.v1.TimeConstraint.not_before:type_name -> google.protobuf.Timestamp
-	8,  // 7: airfare.v1.GetPricesForRulesResponse.results:type_name -> airfare.v1.RuleResult
-	9,  // 8: airfare.v1.RuleResult.options:type_name -> airfare.v1.PriceOption
-	12, // 9: airfare.v1.GetAirfareByMatchResponse.slots:type_name -> airfare.v1.FareSlot
+	14, // 3: airfare.v1.Rule.day_utc:type_name -> google.protobuf.Timestamp
+	7,  // 4: airfare.v1.Rule.time_constraint:type_name -> airfare.v1.TimeConstraint
+	14, // 5: airfare.v1.TimeConstraint.not_after:type_name -> google.protobuf.Timestamp
+	14, // 6: airfare.v1.TimeConstraint.not_before:type_name -> google.protobuf.Timestamp
+	9,  // 7: airfare.v1.GetPricesForRulesResponse.results:type_name -> airfare.v1.RuleResult
+	10, // 8: airfare.v1.RuleResult.options:type_name -> airfare.v1.PriceOption
+	13, // 9: airfare.v1.GetAirfareByMatchResponse.slots:type_name -> airfare.v1.FareSlot
 	3,  // 10: airfare.v1.FareSlot.slot:type_name -> airfare.v1.FareSlotType
 	2,  // 11: airfare.v1.FareSlot.direction:type_name -> airfare.v1.FareDirection
-	4,  // 12: airfare.v1.AirfareProviderService.GetPricesForRules:input_type -> airfare.v1.GetPricesForRulesRequest
-	10, // 13: airfare.v1.AirfareProviderService.GetAirfareByMatch:input_type -> airfare.v1.GetAirfareByMatchRequest
-	7,  // 14: airfare.v1.AirfareProviderService.GetPricesForRules:output_type -> airfare.v1.GetPricesForRulesResponse
-	11, // 15: airfare.v1.AirfareProviderService.GetAirfareByMatch:output_type -> airfare.v1.GetAirfareByMatchResponse
-	14, // [14:16] is the sub-list for method output_type
-	12, // [12:14] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	4,  // 12: airfare.v1.FareSlot.window_level:type_name -> airfare.v1.FareWindowLevel
+	5,  // 13: airfare.v1.AirfareProviderService.GetPricesForRules:input_type -> airfare.v1.GetPricesForRulesRequest
+	11, // 14: airfare.v1.AirfareProviderService.GetAirfareByMatch:input_type -> airfare.v1.GetAirfareByMatchRequest
+	8,  // 15: airfare.v1.AirfareProviderService.GetPricesForRules:output_type -> airfare.v1.GetPricesForRulesResponse
+	12, // 16: airfare.v1.AirfareProviderService.GetAirfareByMatch:output_type -> airfare.v1.GetAirfareByMatchResponse
+	15, // [15:17] is the sub-list for method output_type
+	13, // [13:15] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_airfare_v1_airfare_provider_proto_init() }
@@ -902,7 +970,7 @@ func file_airfare_v1_airfare_provider_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_airfare_v1_airfare_provider_proto_rawDesc), len(file_airfare_v1_airfare_provider_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,

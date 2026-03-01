@@ -79,6 +79,7 @@ message FareSlot {
   FareDirection direction = 2;
   string date = 3; // YYYY-MM-DD (UTC)
   repeated int64 prices = 4;
+  FareWindowLevel window_level = 5;
 }
 
 enum FareDirection {
@@ -95,4 +96,11 @@ enum FareSlotType {
   FARE_SLOT_RET_D0_DEPART_AFTER = 4;
   FARE_SLOT_RET_D_PLUS_1 = 5;
   FARE_SLOT_RET_D_PLUS_2 = 6;
+}
+
+enum FareWindowLevel {
+  FARE_WINDOW_LEVEL_UNSPECIFIED = 0;
+  FARE_WINDOW_LEVEL_STRICT = 1;
+  FARE_WINDOW_LEVEL_SOFT_1 = 2;
+  FARE_WINDOW_LEVEL_SOFT_2 = 3;
 }

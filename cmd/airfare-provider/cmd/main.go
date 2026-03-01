@@ -79,7 +79,14 @@ func main() {
 		cfg.Travelpayouts.Limit,
 		cfg.Travelpayouts.Timeout,
 	)
-	airfareService := service.NewAirfareService(log, matchReader, fareSource, airfareCache, cfg.AirfareCacheTTL)
+	airfareService := service.NewAirfareService(
+		log,
+		matchReader,
+		fareSource,
+		airfareCache,
+		cfg.AirfareCacheTTL,
+		matchDayWindowPolicyFromConfig(cfg.MatchDayWindows),
+	)
 
 	app := grpcapp.New(log, cfg.GRPC.Host, cfg.GRPC.Port, func(s *grpc.Server) {
 		grpcapi.Register(s, log, airfareService)
@@ -127,5 +134,19 @@ func parseLogLevel(level string) zapcore.Level {
 		return zapcore.ErrorLevel
 	default:
 		return zapcore.InfoLevel
+	}
+}
+
+func matchDayWindowPolicyFromConfig(cfg config.MatchDayWindowsConfig) service.MatchDayWindowPolicy {
+	return service.MatchDayWindowPolicy{
+		OutStrictEarliestBefore: cfg.OutStrictEarliestBefore,
+		OutStrictLatestBefore:   cfg.OutStrictLatestBefore,
+		OutSoft1EarliestBefore:  cfg.OutSoft1EarliestBefore,
+		OutSoft1LatestBefore:    cfg.OutSoft1LatestBefore,
+		OutSoft2EarliestBefore:  cfg.OutSoft2EarliestBefore,
+		OutSoft2LatestBefore:    cfg.OutSoft2LatestBefore,
+		RetStrictNotBeforeAfter: cfg.RetStrictNotBeforeAfter,
+		RetSoft1NotBeforeAfter:  cfg.RetSoft1NotBeforeAfter,
+		RetSoft2NotBeforeAfter:  cfg.RetSoft2NotBeforeAfter,
 	}
 }

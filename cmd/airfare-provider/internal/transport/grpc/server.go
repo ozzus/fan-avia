@@ -102,10 +102,11 @@ func (s *serverAPI) GetAirfareByMatch(ctx context.Context, req *airfarev1.GetAir
 
 	for _, slot := range result.Slots {
 		resp.Slots = append(resp.Slots, &airfarev1.FareSlot{
-			Slot:      mapSlotKind(slot.Kind),
-			Direction: mapDirection(slot.Direction),
-			Date:      slot.DateUTC.Format("2006-01-02"),
-			Prices:    slot.Prices,
+			Slot:        mapSlotKind(slot.Kind),
+			Direction:   mapDirection(slot.Direction),
+			Date:        slot.DateUTC.Format("2006-01-02"),
+			Prices:      slot.Prices,
+			WindowLevel: mapWindowLevel(slot.WindowLevel),
 		})
 	}
 
@@ -196,5 +197,18 @@ func mapDirection(direction ports.Direction) airfarev1.FareDirection {
 		return airfarev1.FareDirection_FARE_DIRECTION_RETURN
 	default:
 		return airfarev1.FareDirection_FARE_DIRECTION_UNSPECIFIED
+	}
+}
+
+func mapWindowLevel(level ports.WindowLevel) airfarev1.FareWindowLevel {
+	switch level {
+	case ports.WindowLevelStrict:
+		return airfarev1.FareWindowLevel_FARE_WINDOW_LEVEL_STRICT
+	case ports.WindowLevelSoft1:
+		return airfarev1.FareWindowLevel_FARE_WINDOW_LEVEL_SOFT_1
+	case ports.WindowLevelSoft2:
+		return airfarev1.FareWindowLevel_FARE_WINDOW_LEVEL_SOFT_2
+	default:
+		return airfarev1.FareWindowLevel_FARE_WINDOW_LEVEL_UNSPECIFIED
 	}
 }

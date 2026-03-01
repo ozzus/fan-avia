@@ -20,6 +20,16 @@ match_adapter:
   host: "localhost"
   port: 44045
   timeout: 3s
+match_day_windows:
+  out_strict_earliest_before: 4h
+  out_strict_latest_before: 2h
+  out_soft1_earliest_before: 8h
+  out_soft1_latest_before: 0h
+  out_soft2_earliest_before: 24h
+  out_soft2_latest_before: 0h
+  ret_strict_not_before_after: 4h
+  ret_soft1_not_before_after: 2h
+  ret_soft2_not_before_after: 0h
 travelpayouts:
   base_url: "https://api.travelpayouts.com"
   currency: "rub"

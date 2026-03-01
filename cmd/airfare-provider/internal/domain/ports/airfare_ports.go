@@ -40,11 +40,21 @@ const (
 	DirectionRet
 )
 
+type WindowLevel uint8
+
+const (
+	WindowLevelUnknown WindowLevel = iota
+	WindowLevelStrict
+	WindowLevelSoft1
+	WindowLevelSoft2
+)
+
 type FareSlot struct {
-	Kind      SlotKind
-	Direction Direction
-	DateUTC   time.Time
-	Prices    []int64
+	Kind        SlotKind
+	Direction   Direction
+	DateUTC     time.Time
+	Prices      []int64
+	WindowLevel WindowLevel
 }
 
 type AirfareByMatch struct {
@@ -62,6 +72,7 @@ type FareSearch struct {
 	OriginIATA         string
 	DestinationIATA    string
 	DateUTC            time.Time
+	ArriveNotBeforeUTC *time.Time
 	ArriveNotLaterUTC  *time.Time
 	DepartNotBeforeUTC *time.Time
 }

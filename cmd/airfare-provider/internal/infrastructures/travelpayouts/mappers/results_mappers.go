@@ -45,7 +45,7 @@ func uniqueSorted(values []int64) []int64 {
 }
 
 func passesTimeConstraints(item dto.PriceForDateItem, search ports.FareSearch) bool {
-	if search.ArriveNotLaterUTC == nil && search.DepartNotBeforeUTC == nil {
+	if search.ArriveNotBeforeUTC == nil && search.ArriveNotLaterUTC == nil && search.DepartNotBeforeUTC == nil {
 		return true
 	}
 
@@ -60,6 +60,15 @@ func passesTimeConstraints(item dto.PriceForDateItem, search ports.FareSearch) b
 		}
 		if duration > 0 {
 			arrival = departure.Add(time.Duration(duration) * time.Minute)
+		}
+	}
+
+	if search.ArriveNotBeforeUTC != nil {
+		if arrival.IsZero() {
+			return false
+		}
+		if arrival.Before(search.ArriveNotBeforeUTC.UTC()) {
+			return false
 		}
 	}
 
