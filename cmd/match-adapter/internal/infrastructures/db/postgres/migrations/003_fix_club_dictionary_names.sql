@@ -1,11 +1,3 @@
-﻿CREATE TABLE IF NOT EXISTS public.club_dictionary (
-  club_id TEXT PRIMARY KEY,
-  name_ru TEXT NOT NULL,
-  name_en TEXT NOT NULL DEFAULT '',
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
 INSERT INTO public.club_dictionary (club_id, name_ru, name_en)
 VALUES
   ('1', 'Спартак Москва', 'Spartak Moscow'),

@@ -12,6 +12,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	defaultUpcomingLimit     = 12
+	defaultClubUpcomingLimit = 100
+	maxUpcomingLimit         = 100
+)
+
 type MatchHandler struct {
 	log     *zap.Logger
 	client  *match.Client
@@ -119,23 +125,26 @@ func (h *MatchHandler) GetUpcomingMatches(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	limit := int32(12)
+	clubID, _, clubErr := parsePositiveIntQuery(r, "club_id")
+	if clubErr != "" {
+		writeError(w, http.StatusBadRequest, "club_id must be a positive integer")
+		return
+	}
+
+	limit := int32(defaultUpcomingLimit)
+	if clubID != "" {
+		limit = defaultClubUpcomingLimit
+	}
 	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
 		parsed, err := strconv.ParseInt(raw, 10, 32)
 		if err != nil || parsed <= 0 {
 			writeError(w, http.StatusBadRequest, "limit must be a positive integer")
 			return
 		}
-		if parsed > 100 {
-			parsed = 100
+		if parsed > maxUpcomingLimit {
+			parsed = maxUpcomingLimit
 		}
 		limit = int32(parsed)
-	}
-
-	clubID, _, clubErr := parsePositiveIntQuery(r, "club_id")
-	if clubErr != "" {
-		writeError(w, http.StatusBadRequest, "club_id must be a positive integer")
-		return
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)

@@ -16,7 +16,8 @@ import (
 
 const (
 	defaultUpcomingWithAirfareLimit = 12
-	maxUpcomingWithAirfareLimit     = 30
+	defaultClubUpcomingWithAirfare  = 100
+	maxUpcomingWithAirfareLimit     = 100
 	maxMatchAdapterUpcomingLimit    = 100
 	defaultUpcomingWithAirfareTO    = 20 * time.Second
 	maxConcurrentAirfareCalls       = 4
@@ -73,7 +74,17 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	clubID, _, clubErr := parsePositiveIntQuery(r, "club_id")
+	if clubErr != "" {
+		writeError(w, http.StatusBadRequest, "club_id must be a positive integer")
+		return
+	}
+
 	limit := int32(defaultUpcomingWithAirfareLimit)
+	if clubID != "" {
+		limit = defaultClubUpcomingWithAirfare
+	}
+
 	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
 		parsed, err := strconv.ParseInt(raw, 10, 32)
 		if err != nil || parsed <= 0 {
@@ -96,12 +107,6 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 	}
 	if !isValidIATA(originIATA) {
 		writeError(w, http.StatusBadRequest, "origin_iata must be 3 latin letters")
-		return
-	}
-
-	clubID, _, clubErr := parsePositiveIntQuery(r, "club_id")
-	if clubErr != "" {
-		writeError(w, http.StatusBadRequest, "club_id must be a positive integer")
 		return
 	}
 

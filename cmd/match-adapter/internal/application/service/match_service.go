@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	derr "github.com/ozzus/fan-avia/cmd/match-adapter/internal/domain/errors"
@@ -24,7 +23,7 @@ type MatchService struct {
 
 const (
 	defaultUpcomingLimit = 10
-	maxUpcomingLimit     = 100
+	maxUpcomingLimit     = 500
 )
 
 func NewMatchService(log *zap.Logger, source ports.MatchSource, resolver ports.CityIATAResolver, repo ports.MatchRepository, cache ports.MatchCache, cacheTTL time.Duration) *MatchService {
@@ -102,7 +101,6 @@ func (s *MatchService) GetUpcomingMatches(ctx context.Context, limit int, clubID
 	const op = "service.GetUpcomingMatches"
 
 	limit = normalizeUpcomingLimit(limit)
-	clubID = strings.TrimSpace(clubID)
 
 	matches, err := s.repo.GetUpcoming(ctx, limit, clubID)
 	if err != nil {
@@ -186,6 +184,17 @@ func (s *MatchService) SyncUpcomingMatches(ctx context.Context, from time.Time, 
 			match.DestinationIATA = iata
 		}
 
+		existing, err := s.repo.GetByID(ctx, match.ID)
+		if err == nil {
+			logMatchDiff(logger, existing, match)
+		} else if !errors.Is(err, derr.ErrMatchNotFound) {
+			logger.Warn(
+				"failed to load existing match before upsert",
+				zap.String("match_id", string(id)),
+				zap.Error(err),
+			)
+		}
+
 		if err := s.repo.Upsert(ctx, match); err != nil {
 			if isContextErr(err) {
 				return saved, err
@@ -230,4 +239,46 @@ func normalizeUpcomingLimit(limit int) int {
 
 func isContextErr(err error) bool {
 	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+}
+
+func logMatchDiff(logger *zap.Logger, oldMatch models.Match, newMatch models.Match) {
+	diffFields := make([]string, 0, 8)
+
+	if oldMatch.HomeTeam != newMatch.HomeTeam {
+		diffFields = append(diffFields, "club_home_id")
+	}
+	if oldMatch.AwayTeam != newMatch.AwayTeam {
+		diffFields = append(diffFields, "club_away_id")
+	}
+	if oldMatch.City != newMatch.City {
+		diffFields = append(diffFields, "city")
+	}
+	if oldMatch.Stadium != newMatch.Stadium {
+		diffFields = append(diffFields, "stadium")
+	}
+	if oldMatch.KickoffUTC.UTC() != newMatch.KickoffUTC.UTC() {
+		diffFields = append(diffFields, "kickoff_utc")
+	}
+	if oldMatch.DestinationIATA != newMatch.DestinationIATA {
+		diffFields = append(diffFields, "destination_iata")
+	}
+	if oldMatch.TicketsLink != newMatch.TicketsLink {
+		diffFields = append(diffFields, "tickets_link")
+	}
+
+	if len(diffFields) == 0 {
+		return
+	}
+
+	logger.Warn(
+		"match snapshot changed by source sync",
+		zap.String("match_id", string(newMatch.ID)),
+		zap.Strings("diff_fields", diffFields),
+		zap.String("old_kickoff_utc", oldMatch.KickoffUTC.UTC().Format(time.RFC3339)),
+		zap.String("new_kickoff_utc", newMatch.KickoffUTC.UTC().Format(time.RFC3339)),
+		zap.String("old_home_club_id", oldMatch.HomeTeam),
+		zap.String("new_home_club_id", newMatch.HomeTeam),
+		zap.String("old_away_club_id", oldMatch.AwayTeam),
+		zap.String("new_away_club_id", newMatch.AwayTeam),
+	)
 }

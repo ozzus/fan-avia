@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -53,9 +54,18 @@ func (r *Repository) Close() {
 }
 
 func (r *Repository) GetByID(ctx context.Context, id models.MatchID) (models.Match, error) {
+	match, _, err := r.getByIDWithUpdatedAt(ctx, id)
+	return match, err
+}
+
+func (r *Repository) GetByIDWithUpdatedAt(ctx context.Context, id models.MatchID) (models.Match, time.Time, error) {
+	return r.getByIDWithUpdatedAt(ctx, id)
+}
+
+func (r *Repository) getByIDWithUpdatedAt(ctx context.Context, id models.MatchID) (models.Match, time.Time, error) {
 	matchID, err := strconv.ParseInt(string(id), 10, 64)
 	if err != nil {
-		return models.Match{}, fmt.Errorf("parse match id %q: %w", id, err)
+		return models.Match{}, time.Time{}, fmt.Errorf("parse match id %q: %w", id, err)
 	}
 
 	const query = `
@@ -67,7 +77,8 @@ func (r *Repository) GetByID(ctx context.Context, id models.MatchID) (models.Mat
 			destination_iata,
 			tickets_link,
 			COALESCE(club_home_id, ''),
-			COALESCE(club_away_id, '')
+			COALESCE(club_away_id, ''),
+			updated_at
 		FROM matches
 		WHERE match_id = $1
 	`
@@ -75,6 +86,7 @@ func (r *Repository) GetByID(ctx context.Context, id models.MatchID) (models.Mat
 	var (
 		storedID int64
 		match    models.Match
+		updated  time.Time
 	)
 
 	err = r.db.QueryRow(ctx, query, matchID).Scan(
@@ -86,16 +98,17 @@ func (r *Repository) GetByID(ctx context.Context, id models.MatchID) (models.Mat
 		&match.TicketsLink,
 		&match.HomeTeam,
 		&match.AwayTeam,
+		&updated,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.Match{}, derr.ErrMatchNotFound
+			return models.Match{}, time.Time{}, derr.ErrMatchNotFound
 		}
-		return models.Match{}, fmt.Errorf("query match by id: %w", err)
+		return models.Match{}, time.Time{}, fmt.Errorf("query match by id: %w", err)
 	}
 
 	match.ID = models.MatchID(strconv.FormatInt(storedID, 10))
-	return match, nil
+	return match, updated, nil
 }
 
 func (r *Repository) GetUpcoming(ctx context.Context, limit int, clubID string) ([]models.Match, error) {
