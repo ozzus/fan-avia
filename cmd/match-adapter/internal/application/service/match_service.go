@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	derr "github.com/ozzus/fan-avia/cmd/match-adapter/internal/domain/errors"
@@ -76,11 +77,9 @@ func (s *MatchService) GetMatch(ctx context.Context, id models.MatchID) (models.
 	}
 
 	if match.DestinationIATA == "" {
-		iata, err := s.resolver.ResolveDestinationIATA(ctx, match.City)
-		if err != nil {
+		if err := s.enrichDestinationFromCityOrClub(ctx, &match); err != nil {
 			return models.Match{}, fmt.Errorf("%s: resolve destination iata: %w", op, err)
 		}
-		match.DestinationIATA = iata
 	}
 
 	if err := s.repo.Upsert(ctx, match); err != nil {
@@ -167,8 +166,7 @@ func (s *MatchService) SyncUpcomingMatches(ctx context.Context, from time.Time, 
 		}
 
 		if match.DestinationIATA == "" {
-			iata, err := s.resolver.ResolveDestinationIATA(ctx, match.City)
-			if err != nil {
+			if err := s.enrichDestinationFromCityOrClub(ctx, &match); err != nil {
 				if isContextErr(err) {
 					return saved, err
 				}
@@ -177,11 +175,11 @@ func (s *MatchService) SyncUpcomingMatches(ctx context.Context, from time.Time, 
 					"failed to resolve destination iata",
 					zap.String("match_id", string(id)),
 					zap.String("city", match.City),
+					zap.String("club_home_id", match.HomeTeam),
 					zap.Error(err),
 				)
 				continue
 			}
-			match.DestinationIATA = iata
 		}
 
 		existing, err := s.repo.GetByID(ctx, match.ID)
@@ -239,6 +237,56 @@ func normalizeUpcomingLimit(limit int) int {
 
 func isContextErr(err error) bool {
 	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+}
+
+func (s *MatchService) enrichDestinationFromCityOrClub(ctx context.Context, match *models.Match) error {
+	city := strings.TrimSpace(match.City)
+	if city != "" {
+		iata, err := s.resolver.ResolveDestinationIATA(ctx, city)
+		if err == nil {
+			match.DestinationIATA = iata
+			return nil
+		}
+		if !errors.Is(err, derr.ErrCityIATANotFound) {
+			return err
+		}
+	}
+
+	fallback, ok := fallbackByHomeClubID[match.HomeTeam]
+	if !ok {
+		return derr.ErrCityIATANotFound
+	}
+
+	if city == "" {
+		match.City = fallback.city
+	}
+	match.DestinationIATA = fallback.iata
+
+	return nil
+}
+
+type clubFallback struct {
+	city string
+	iata string
+}
+
+var fallbackByHomeClubID = map[string]clubFallback{
+	"1":   {city: "Москва", iata: "MOW"},          // Спартак Москва
+	"2":   {city: "Москва", iata: "MOW"},          // ПФК ЦСКА
+	"3":   {city: "Санкт-Петербург", iata: "LED"}, // Зенит
+	"4":   {city: "Казань", iata: "KZN"},          // Рубин
+	"5":   {city: "Москва", iata: "MOW"},          // Локомотив
+	"7":   {city: "Москва", iata: "MOW"},          // Динамо Москва
+	"10":  {city: "Самара", iata: "KUF"},          // Крылья Советов
+	"11":  {city: "Ростов-на-Дону", iata: "ROV"}, // Ростов
+	"125": {city: "Каспийск", iata: "MCX"},       // Динамо Махачкала
+	"444": {city: "Калининград", iata: "KGD"},    // Балтика
+	"504": {city: "Оренбург", iata: "REN"},       // Оренбург
+	"525": {city: "Сочи", iata: "AER"},           // Сочи
+	"584": {city: "Краснодар", iata: "KRR"},      // Краснодар
+	"702": {city: "Грозный", iata: "GRV"},        // Ахмат
+	"704": {city: "Нижний Новгород", iata: "GOJ"}, // Пари НН
+	"807": {city: "Самара", iata: "KUF"},         // Акрон
 }
 
 func logMatchDiff(logger *zap.Logger, oldMatch models.Match, newMatch models.Match) {

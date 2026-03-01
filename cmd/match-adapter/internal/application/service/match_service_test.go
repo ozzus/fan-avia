@@ -349,3 +349,84 @@ func TestSyncUpcomingMatches_AllFailed(t *testing.T) {
 		t.Fatalf("expected no upserts, got %d", repo.upsertCalls)
 	}
 }
+
+func TestSyncUpcomingMatches_UsesHomeClubFallbackWhenCityMissing(t *testing.T) {
+	kickoff := time.Date(2026, 3, 22, 12, 0, 0, 0, time.UTC)
+	source := &sourceMock{
+		upcomingIDs: []models.MatchID{"16232"},
+		matchByID: map[models.MatchID]models.Match{
+			"16232": {
+				ID:         "16232",
+				HomeTeam:   "504",
+				AwayTeam:   "1",
+				City:       "",
+				Stadium:    "Газовик",
+				KickoffUTC: kickoff,
+			},
+		},
+	}
+	resolver := &resolverMock{err: derr.ErrCityIATANotFound}
+	repo := &repoMock{}
+	cache := &cacheMock{}
+	svc := NewMatchService(zap.NewNop(), source, resolver, repo, cache, 15*time.Minute)
+
+	count, err := svc.SyncUpcomingMatches(
+		context.Background(),
+		kickoff.Add(-24*time.Hour),
+		kickoff.Add(24*time.Hour),
+		10,
+	)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("expected synced count 1, got %d", count)
+	}
+	if resolver.calls != 0 {
+		t.Fatalf("expected resolver not called for empty city fallback, got %d calls", resolver.calls)
+	}
+	if len(repo.upserted) != 1 {
+		t.Fatalf("expected one upserted match, got %d", len(repo.upserted))
+	}
+	if repo.upserted[0].DestinationIATA != "REN" {
+		t.Fatalf("expected fallback iata REN, got %q", repo.upserted[0].DestinationIATA)
+	}
+	if repo.upserted[0].City == "" {
+		t.Fatal("expected fallback city to be filled")
+	}
+}
+
+func TestGetMatch_UsesHomeClubFallbackWhenCityMissing(t *testing.T) {
+	cache := &cacheMock{getErr: derr.ErrMatchNotFound}
+	repo := &repoMock{getErr: derr.ErrMatchNotFound}
+	source := &sourceMock{
+		match: models.Match{
+			ID:          "17000",
+			HomeTeam:    "525",
+			AwayTeam:    "1",
+			City:        "",
+			Stadium:     "Фишт",
+			TicketsLink: "https://tickets.test/17000",
+			KickoffUTC:  time.Date(2026, 3, 1, 13, 30, 0, 0, time.UTC),
+		},
+	}
+	resolver := &resolverMock{err: derr.ErrCityIATANotFound}
+
+	svc := NewMatchService(zap.NewNop(), source, resolver, repo, cache, 10*time.Minute)
+	got, err := svc.GetMatch(context.Background(), "17000")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if got.DestinationIATA != "AER" {
+		t.Fatalf("expected fallback iata AER, got %q", got.DestinationIATA)
+	}
+	if got.City == "" {
+		t.Fatal("expected fallback city to be filled")
+	}
+	if resolver.calls != 0 {
+		t.Fatalf("expected resolver not called for empty city fallback, got %d calls", resolver.calls)
+	}
+	if repo.upsertCalls != 1 {
+		t.Fatalf("expected upsert to be called once, got %d", repo.upsertCalls)
+	}
+}
