@@ -17,6 +17,6 @@ WORKDIR /app
 COPY --from=builder /app/api-gateway /app/api-gateway
 COPY --from=builder /src/config ./config
 
-EXPOSE 8080
+EXPOSE 8100
 ENTRYPOINT ["/app/api-gateway"]
 CMD ["--config=/app/config/local.yaml"]

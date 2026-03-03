@@ -58,7 +58,7 @@ services:
     image: fan-avia/api-gateway:local
     container_name: api-gateway
     ports:
-      - "8080:8080"
+      - "8100:8100"
     environment:
       AIRFARE_ADDRESS: airfare-provider:44044
       MATCH_ADDRESS: match-adapter:44045
