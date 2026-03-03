@@ -16,7 +16,6 @@ RUN apk add --no-cache ca-certificates && update-ca-certificates
 WORKDIR /app
 COPY --from=builder /app/airfare-provider /app/airfare-provider
 COPY --from=builder /src/config ./config
-COPY --from=builder /src/.env .env
 
 EXPOSE 44044
 ENTRYPOINT ["/app/airfare-provider"]

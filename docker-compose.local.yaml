@@ -1,4 +1,17 @@
 services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+
+  redis:
+    image: redis:7-alpine
+    container_name: fan-avia-redis
+    ports:
+      - "6379:6379"
+
   match-adapter:
     build:
       context: .
@@ -53,3 +66,15 @@ services:
     depends_on:
       - airfare-provider
       - match-adapter
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
+    ports:
+      - "8081:8080"
+    environment:
+      SWAGGER_JSON: /local/openapi.yaml
+    volumes:
+      - ./:/local:ro
+    depends_on:
+      - api-gateway

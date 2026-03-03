@@ -16,7 +16,6 @@ RUN apk add --no-cache ca-certificates && update-ca-certificates
 WORKDIR /app
 COPY --from=builder /app/api-gateway /app/api-gateway
 COPY --from=builder /src/config ./config
-COPY --from=builder /src/.env .env
 
 EXPOSE 8080
 ENTRYPOINT ["/app/api-gateway"]
