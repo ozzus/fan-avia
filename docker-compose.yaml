@@ -16,8 +16,6 @@ services:
       DEBUG_HTTP_PORT: "8086"
       REDIS_ADDR: redis:6379
       JAEGER: jaeger:14268
-    depends_on:
-      - redis
 
   airfare-provider:
     build:
@@ -35,7 +33,6 @@ services:
       MATCH_ADAPTER_PORT: "44045"
       JAEGER: jaeger:14268
     depends_on:
-      - redis
       - match-adapter
 
   api-gateway:
