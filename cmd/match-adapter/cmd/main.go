@@ -71,6 +71,7 @@ func main() {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr,
 		Password: cfg.Redis.Password,
+		Username: cfg.Redis.Username,
 		DB:       cfg.Redis.DB,
 	})
 	defer func() {

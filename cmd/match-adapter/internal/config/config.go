@@ -47,6 +47,7 @@ type DBConfig struct {
 type RedisConfig struct {
 	Addr     string `yaml:"addr" env:"REDIS_ADDR" env-default:"localhost:6379"`
 	Password string `yaml:"password" env:"REDIS_PASSWORD"`
+	Username string `yaml:"username" env:"REDIS_USERNAME"`
 	DB       int    `yaml:"db" env:"REDIS_DB" env-default:"0"`
 }
 
