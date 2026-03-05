@@ -6,13 +6,15 @@ services:
     image: fan-avia/match-adapter:local
     container_name: match-adapter
     ports:
-      - "44045:44045"
       - "8086:8086"
+      - "44045:44045"
     env_file:
       - ./cmd/match-adapter/.env
     environment:
       DEBUG_HTTP_ENABLED: "true"
       DEBUG_HTTP_HOST: "0.0.0.0"
+      GRPC_HOST: "0.0.0.0"
+      GRPC_PORT: "44045"
       DEBUG_HTTP_PORT: "8086"
       REDIS_ADDR: redis:6379
       JAEGER: jaeger:14268
@@ -28,6 +30,8 @@ services:
     env_file:
       - ./cmd/airfare-provider/.env
     environment:
+      GRPC_HOST: "0.0.0.0"
+      GRPC_PORT: "44044"
       REDIS_ADDR: redis:6379
       MATCH_ADAPTER_HOST: match-adapter
       MATCH_ADAPTER_PORT: "44045"
@@ -47,6 +51,7 @@ services:
       AIRFARE_ADDRESS: airfare-provider:44044
       MATCH_ADDRESS: match-adapter:44045
       JAEGER_ADDRESS: jaeger:14268
+      HTTP_PORT: "8100"
     depends_on:
       - airfare-provider
       - match-adapter
