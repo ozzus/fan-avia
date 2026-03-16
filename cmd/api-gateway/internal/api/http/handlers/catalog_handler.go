@@ -125,10 +125,18 @@ func (h *CatalogHandler) GetUpcomingWithAirfare(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	clubsResp, err := h.matchClient.GetClubs(ctx)
+	if err != nil {
+		h.log.Error("get clubs failed", zap.Error(err))
+		writeError(w, http.StatusBadGateway, "match adapter error")
+		return
+	}
+	clubIndex := buildClubIndex(clubsResp.GetClubs())
+
 	matches := cutMatchesByLimit(filterMatchesByClubID(upcomingResp.GetMatches(), clubID), limit)
 	items := make([]upcomingWithAirfareItem, 0, len(matches))
 	for _, m := range matches {
-		items = append(items, upcomingWithAirfareItem{Match: mapMatch(m)})
+		items = append(items, upcomingWithAirfareItem{Match: mapMatch(m, clubIndex)})
 	}
 
 	type airfareResult struct {

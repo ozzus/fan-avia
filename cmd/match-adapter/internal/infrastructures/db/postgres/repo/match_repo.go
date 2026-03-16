@@ -176,7 +176,10 @@ func (r *Repository) GetClubs(ctx context.Context) ([]models.Club, error) {
 		SELECT
 			club_id,
 			name_ru,
-			COALESCE(name_en, '')
+			COALESCE(name_en, ''),
+			COALESCE(logo, ''),
+			COALESCE(city, ''),
+			COALESCE(airport_iata, '')
 		FROM club_dictionary
 		ORDER BY name_ru ASC
 	`
@@ -190,7 +193,7 @@ func (r *Repository) GetClubs(ctx context.Context) ([]models.Club, error) {
 	clubs := make([]models.Club, 0, 32)
 	for rows.Next() {
 		var club models.Club
-		if err := rows.Scan(&club.ID, &club.NameRU, &club.NameEN); err != nil {
+		if err := rows.Scan(&club.ID, &club.NameRU, &club.NameEN, &club.Logo, &club.City, &club.AirportIATA); err != nil {
 			return nil, fmt.Errorf("scan club: %w", err)
 		}
 		clubs = append(clubs, club)

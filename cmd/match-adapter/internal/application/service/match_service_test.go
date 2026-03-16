@@ -216,8 +216,8 @@ func TestGetUpcomingMatches_DefaultLimit(t *testing.T) {
 func TestGetClubs(t *testing.T) {
 	repo := &repoMock{
 		clubs: []models.Club{
-			{ID: "1", NameRU: "Спартак Москва", NameEN: "Spartak Moscow"},
-			{ID: "3", NameRU: "Зенит", NameEN: "Zenit"},
+			{ID: "1", NameRU: "Спартак Москва", NameEN: "Spartak Moscow", Logo: "1.svg", City: "Москва", AirportIATA: "MOW"},
+			{ID: "3", NameRU: "Зенит", NameEN: "Zenit", Logo: "3.svg", City: "Санкт-Петербург", AirportIATA: "LED"},
 		},
 	}
 
@@ -360,7 +360,7 @@ func TestSyncUpcomingMatches_UsesHomeClubFallbackWhenCityMissing(t *testing.T) {
 				HomeTeam:   "504",
 				AwayTeam:   "1",
 				City:       "",
-				Stadium:    "Газовик",
+				Stadium:    "Р“Р°Р·РѕРІРёРє",
 				KickoffUTC: kickoff,
 			},
 		},
@@ -405,7 +405,7 @@ func TestGetMatch_UsesHomeClubFallbackWhenCityMissing(t *testing.T) {
 			HomeTeam:    "525",
 			AwayTeam:    "1",
 			City:        "",
-			Stadium:     "Фишт",
+			Stadium:     "Р¤РёС€С‚",
 			TicketsLink: "https://tickets.test/17000",
 			KickoffUTC:  time.Date(2026, 3, 1, 13, 30, 0, 0, time.UTC),
 		},

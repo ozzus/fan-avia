@@ -17,9 +17,12 @@ type ClubHandler struct {
 }
 
 type clubResponse struct {
-	ClubID string `json:"club_id"`
-	NameRU string `json:"name_ru"`
-	NameEN string `json:"name_en,omitempty"`
+	ClubID      string `json:"club_id"`
+	NameRU      string `json:"name_ru"`
+	NameEN      string `json:"name_en,omitempty"`
+	Logo        string `json:"logo,omitempty"`
+	City        string `json:"city,omitempty"`
+	AirportIATA string `json:"airport_iata,omitempty"`
 }
 
 func NewClubHandler(log *zap.Logger, client *match.Client, timeout time.Duration) *ClubHandler {
@@ -49,9 +52,12 @@ func (h *ClubHandler) GetClubs(w http.ResponseWriter, r *http.Request) {
 	clubs := make([]clubResponse, 0, len(resp.GetClubs()))
 	for _, c := range resp.GetClubs() {
 		clubs = append(clubs, clubResponse{
-			ClubID: strings.TrimSpace(c.GetClubId()),
-			NameRU: strings.TrimSpace(c.GetNameRu()),
-			NameEN: strings.TrimSpace(c.GetNameEn()),
+			ClubID:      strings.TrimSpace(c.GetClubId()),
+			NameRU:      strings.TrimSpace(c.GetNameRu()),
+			NameEN:      strings.TrimSpace(c.GetNameEn()),
+			Logo:        strings.TrimSpace(c.GetLogo()),
+			City:        strings.TrimSpace(c.GetCity()),
+			AirportIATA: strings.TrimSpace(c.GetAirportIata()),
 		})
 	}
 

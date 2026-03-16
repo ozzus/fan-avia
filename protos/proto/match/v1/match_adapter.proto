@@ -50,4 +50,7 @@ message Club {
   string club_id = 1;
   string name_ru = 2;
   string name_en = 3;
+  string logo = 4;
+  string city = 5;
+  string airport_iata = 6;
 }

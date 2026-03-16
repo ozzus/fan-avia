@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ozzus/fan-avia/cmd/api-gateway/internal/clients/match"
-	matchv1 "github.com/ozzus/fan-avia/protos/gen/go/match/v1"
 	"go.uber.org/zap"
 )
 
@@ -22,17 +21,6 @@ type MatchHandler struct {
 	log     *zap.Logger
 	client  *match.Client
 	timeout time.Duration
-}
-
-type matchResponse struct {
-	MatchID                string `json:"match_id"`
-	KickoffUTC             string `json:"kickoff_utc,omitempty"`
-	City                   string `json:"city,omitempty"`
-	Stadium                string `json:"stadium,omitempty"`
-	DestinationAirportIATA string `json:"destination_airport_iata,omitempty"`
-	ClubHomeID             string `json:"club_home_id,omitempty"`
-	ClubAwayID             string `json:"club_away_id,omitempty"`
-	TicketsLink            string `json:"tickets_link,omitempty"`
 }
 
 type matchLoadError struct {
@@ -69,7 +57,14 @@ func (h *MatchHandler) GetMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, mapMatch(resp.GetMatch()))
+	clubsResp, err := h.client.GetClubs(ctx)
+	if err != nil {
+		h.log.Error("get clubs failed", zap.Error(err))
+		writeError(w, http.StatusBadGateway, "match adapter error")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, mapMatch(resp.GetMatch(), buildClubIndex(clubsResp.GetClubs())))
 }
 
 func (h *MatchHandler) GetMatches(w http.ResponseWriter, r *http.Request) {
@@ -87,6 +82,14 @@ func (h *MatchHandler) GetMatches(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), h.timeout)
 	defer cancel()
 
+	clubsResp, err := h.client.GetClubs(ctx)
+	if err != nil {
+		h.log.Error("get clubs failed", zap.Error(err))
+		writeError(w, http.StatusBadGateway, "match adapter error")
+		return
+	}
+	clubIndex := buildClubIndex(clubsResp.GetClubs())
+
 	matches := make([]matchResponse, 0, len(ids))
 	errors := make([]matchLoadError, 0)
 	for _, id := range ids {
@@ -102,7 +105,7 @@ func (h *MatchHandler) GetMatches(w http.ResponseWriter, r *http.Request) {
 			})
 			continue
 		}
-		matches = append(matches, mapMatch(resp.GetMatch()))
+		matches = append(matches, mapMatch(resp.GetMatch(), clubIndex))
 	}
 
 	if len(matches) == 0 {
@@ -162,37 +165,24 @@ func (h *MatchHandler) GetUpcomingMatches(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	clubsResp, err := h.client.GetClubs(ctx)
+	if err != nil {
+		h.log.Error("get clubs failed", zap.Error(err))
+		writeError(w, http.StatusBadGateway, "match adapter error")
+		return
+	}
+	clubIndex := buildClubIndex(clubsResp.GetClubs())
+
 	matches := cutMatchesByLimit(filterMatchesByClubID(resp.GetMatches(), clubID), limit)
 	result := make([]matchResponse, 0, len(matches))
 	for _, m := range matches {
-		result = append(result, mapMatch(m))
+		result = append(result, mapMatch(m, clubIndex))
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"matches": result,
 		"errors":  []matchLoadError{},
 	})
-}
-
-func mapMatch(in *matchv1.Match) matchResponse {
-	if in == nil {
-		return matchResponse{}
-	}
-
-	out := matchResponse{
-		MatchID:                strconv.FormatInt(in.GetMatchId(), 10),
-		City:                   in.GetCity(),
-		Stadium:                in.GetStadium(),
-		DestinationAirportIATA: in.GetDestinationAirportIata(),
-		ClubHomeID:             in.GetClubHomeId(),
-		ClubAwayID:             in.GetClubAwayId(),
-		TicketsLink:            in.GetTicketsLink(),
-	}
-	if in.GetKickoffUtc() != nil {
-		out.KickoffUTC = in.GetKickoffUtc().AsTime().UTC().Format(time.RFC3339)
-	}
-
-	return out
 }
 
 func parseMatchIDFromPath(path string) (int64, string) {

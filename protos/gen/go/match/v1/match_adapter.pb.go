@@ -391,6 +391,9 @@ type Club struct {
 	ClubId        string                 `protobuf:"bytes,1,opt,name=club_id,json=clubId,proto3" json:"club_id,omitempty"`
 	NameRu        string                 `protobuf:"bytes,2,opt,name=name_ru,json=nameRu,proto3" json:"name_ru,omitempty"`
 	NameEn        string                 `protobuf:"bytes,3,opt,name=name_en,json=nameEn,proto3" json:"name_en,omitempty"`
+	Logo          string                 `protobuf:"bytes,4,opt,name=logo,proto3" json:"logo,omitempty"`
+	City          string                 `protobuf:"bytes,5,opt,name=city,proto3" json:"city,omitempty"`
+	AirportIata   string                 `protobuf:"bytes,6,opt,name=airport_iata,json=airportIata,proto3" json:"airport_iata,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -446,6 +449,27 @@ func (x *Club) GetNameEn() string {
 	return ""
 }
 
+func (x *Club) GetLogo() string {
+	if x != nil {
+		return x.Logo
+	}
+	return ""
+}
+
+func (x *Club) GetCity() string {
+	if x != nil {
+		return x.City
+	}
+	return ""
+}
+
+func (x *Club) GetAirportIata() string {
+	if x != nil {
+		return x.AirportIata
+	}
+	return ""
+}
+
 var File_match_v1_match_adapter_proto protoreflect.FileDescriptor
 
 const file_match_v1_match_adapter_proto_rawDesc = "" +
@@ -474,11 +498,14 @@ const file_match_v1_match_adapter_proto_rawDesc = "" +
 	"clubHomeId\x12 \n" +
 	"\fclub_away_id\x18\a \x01(\tR\n" +
 	"clubAwayId\x12!\n" +
-	"\ftickets_link\x18\b \x01(\tR\vticketsLink\"Q\n" +
+	"\ftickets_link\x18\b \x01(\tR\vticketsLink\"\x9c\x01\n" +
 	"\x04Club\x12\x17\n" +
 	"\aclub_id\x18\x01 \x01(\tR\x06clubId\x12\x17\n" +
 	"\aname_ru\x18\x02 \x01(\tR\x06nameRu\x12\x17\n" +
-	"\aname_en\x18\x03 \x01(\tR\x06nameEn2\xfc\x01\n" +
+	"\aname_en\x18\x03 \x01(\tR\x06nameEn\x12\x12\n" +
+	"\x04logo\x18\x04 \x01(\tR\x04logo\x12\x12\n" +
+	"\x04city\x18\x05 \x01(\tR\x04city\x12!\n" +
+	"\fairport_iata\x18\x06 \x01(\tR\vairportIata2\xfc\x01\n" +
 	"\x13MatchAdapterService\x12A\n" +
 	"\bGetMatch\x12\x19.match.v1.GetMatchRequest\x1a\x1a.match.v1.GetMatchResponse\x12_\n" +
 	"\x12GetUpcomingMatches\x12#.match.v1.GetUpcomingMatchesRequest\x1a$.match.v1.GetUpcomingMatchesResponse\x12A\n" +

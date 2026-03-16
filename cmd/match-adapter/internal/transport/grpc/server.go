@@ -107,9 +107,12 @@ func (s *serverAPI) GetClubs(ctx context.Context, req *matchv1.GetClubsRequest) 
 	}
 	for _, club := range clubs {
 		resp.Clubs = append(resp.Clubs, &matchv1.Club{
-			ClubId: club.ID,
-			NameRu: club.NameRU,
-			NameEn: club.NameEN,
+			ClubId:      club.ID,
+			NameRu:      club.NameRU,
+			NameEn:      club.NameEN,
+			Logo:        club.Logo,
+			City:        club.City,
+			AirportIata: club.AirportIATA,
 		})
 	}
 
