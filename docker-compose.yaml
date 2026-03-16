@@ -55,3 +55,16 @@ services:
     depends_on:
       - airfare-provider
       - match-adapter
+
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
+    ports:
+      - "8081:8080"
+    environment:
+      SWAGGER_JSON: /app/openapi.yaml
+    volumes:
+      - ./openapi.yaml:/app/openapi.yaml:ro
+    depends_on:
+      - api-gateway
