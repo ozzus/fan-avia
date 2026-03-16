@@ -1,9 +1,43 @@
 openapi: 3.0.3
 info:
   title: Fan Avia API
-  version: 1.0.0
+  version: 1.1.0
 
 paths:
+  /v1/clubs:
+    get:
+      summary: Get clubs dictionary
+      description: Returns club dictionary with names, logo, city and airport IATA.
+      responses:
+        "200":
+          description: Clubs response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetClubsResponse"
+              example:
+                clubs:
+                  - club_id: "1"
+                    name_ru: "Спартак Москва"
+                    name_en: "Spartak Moscow"
+                    logo: "1.svg"
+                    city: "Москва"
+                    airport_iata: "MOW"
+                  - club_id: "3"
+                    name_ru: "Зенит"
+                    name_en: "Zenit"
+                    logo: "3.svg"
+                    city: "Санкт-Петербург"
+                    airport_iata: "LED"
+        "502":
+          description: Upstream source error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "match adapter error"
+
   /v1/matches:
     get:
       summary: Get matches by ids
@@ -26,12 +60,28 @@ paths:
                 matches:
                   - match_id: "16114"
                     kickoff_utc: "2026-02-27T19:30:00Z"
+                    kickoff_local: "2026-02-27T22:30:00+03:00"
                     city: "Saint Petersburg"
-                    stadium: "Газпром Арена"
+                    stadium: "«Газпром Арена»"
                     destination_airport_iata: "LED"
                     club_home_id: "3"
                     club_away_id: "444"
+                    home_club:
+                      club_id: "3"
+                      name_ru: "Зенит"
+                      name_en: "Zenit"
+                      logo: "3.svg"
+                      city: "Санкт-Петербург"
+                      airport_iata: "LED"
+                    away_club:
+                      club_id: "444"
+                      name_ru: "Балтика"
+                      name_en: "Baltika"
+                      logo: "444.svg"
+                      city: "Калининград"
+                      airport_iata: "KGD"
                     tickets_link: "https://tickets.fc-zenit.ru/football/tickets/#zenit"
+                errors: []
         "400":
           description: Invalid request params
           content:
@@ -63,6 +113,13 @@ paths:
             maximum: 100
             default: 12
           description: Number of matches to return.
+        - in: query
+          name: club_id
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Filter by club id. Returns matches where club is home or away.
       responses:
         "200":
           description: Upcoming matches response
@@ -74,11 +131,26 @@ paths:
                 matches:
                   - match_id: "16114"
                     kickoff_utc: "2026-02-27T19:30:00Z"
+                    kickoff_local: "2026-02-27T22:30:00+03:00"
                     city: "Saint Petersburg"
-                    stadium: "Газпром Арена"
+                    stadium: "«Газпром Арена»"
                     destination_airport_iata: "LED"
                     club_home_id: "3"
                     club_away_id: "444"
+                    home_club:
+                      club_id: "3"
+                      name_ru: "Зенит"
+                      name_en: "Zenit"
+                      logo: "3.svg"
+                      city: "Санкт-Петербург"
+                      airport_iata: "LED"
+                    away_club:
+                      club_id: "444"
+                      name_ru: "Балтика"
+                      name_en: "Baltika"
+                      logo: "444.svg"
+                      city: "Калининград"
+                      airport_iata: "KGD"
                     tickets_link: "https://tickets.fc-zenit.ru/football/tickets/#zenit"
                 errors: []
         "400":
@@ -109,7 +181,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-            maximum: 30
+            maximum: 100
             default: 12
           description: Number of matches to return.
         - in: query
@@ -122,6 +194,13 @@ paths:
             pattern: "^[A-Za-z]{3}$"
             default: MOW
           description: Origin city/airport IATA. If omitted, gateway default is used.
+        - in: query
+          name: club_id
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Filter by club id. Returns matches where club is home or away.
       responses:
         "200":
           description: Upcoming matches with airfare summary
@@ -129,6 +208,39 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UpcomingWithAirfareResponse"
+              example:
+                origin_iata: "MOW"
+                items:
+                  - match:
+                      match_id: "16121"
+                      kickoff_utc: "2026-03-02T12:00:00Z"
+                      kickoff_local: "2026-03-02T15:00:00+03:00"
+                      city: "Сочи"
+                      stadium: "«Фишт»"
+                      destination_airport_iata: "AER"
+                      club_home_id: "525"
+                      club_away_id: "1"
+                      home_club:
+                        club_id: "525"
+                        name_ru: "Сочи"
+                        name_en: "Sochi"
+                        logo: "525.svg"
+                        city: "Сочи"
+                        airport_iata: "AER"
+                      away_club:
+                        club_id: "1"
+                        name_ru: "Спартак Москва"
+                        name_en: "Spartak Moscow"
+                        logo: "1.svg"
+                        city: "Москва"
+                        airport_iata: "MOW"
+                      tickets_link: "https://store.pfcsochi.ru/tickets/"
+                    min_price: 6308
+                    best_slot: "FARE_SLOT_RET_D_PLUS_1"
+                    best_date: "2026-03-03"
+                    best_return_price: 6308
+                    best_return_date: "2026-03-03"
+                errors: []
         "400":
           description: Invalid request params
           content:
@@ -165,14 +277,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/Match"
               example:
-                match_id: "16114"
-                kickoff_utc: "2026-02-27T19:30:00Z"
-                city: "Saint Petersburg"
-                stadium: "Газпром Арена"
-                destination_airport_iata: "LED"
-                club_home_id: "3"
-                club_away_id: "444"
-                tickets_link: "https://tickets.fc-zenit.ru/football/tickets/#zenit"
+                match_id: "16121"
+                kickoff_utc: "2026-03-02T12:00:00Z"
+                kickoff_local: "2026-03-02T15:00:00+03:00"
+                city: "Сочи"
+                stadium: "«Фишт»"
+                destination_airport_iata: "AER"
+                club_home_id: "525"
+                club_away_id: "1"
+                home_club:
+                  club_id: "525"
+                  name_ru: "Сочи"
+                  name_en: "Sochi"
+                  logo: "525.svg"
+                  city: "Сочи"
+                  airport_iata: "AER"
+                away_club:
+                  club_id: "1"
+                  name_ru: "Спартак Москва"
+                  name_en: "Spartak Moscow"
+                  logo: "1.svg"
+                  city: "Москва"
+                  airport_iata: "MOW"
+                tickets_link: "https://store.pfcsochi.ru/tickets/"
         "400":
           description: Invalid request params
           content:
@@ -180,7 +307,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                error: "invalid match id"
+                error: "invalid match_id"
         "502":
           description: Upstream source error
           content:
@@ -212,7 +339,7 @@ paths:
             maxLength: 3
             pattern: "^[A-Za-z]{3}$"
             default: MOW
-          description: Origin city/airport IATA code (e.g. MOW). If omitted, gateway default is used.
+          description: Origin city/airport IATA code. If omitted, gateway default is used.
       responses:
         "200":
           description: Airfare slots response
@@ -221,33 +348,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/GetAirfareByMatchResponse"
               example:
-                matchId: "16114"
-                ticketsLink: "https://tickets.fc-zenit.ru/football/tickets/#zenit"
+                matchId: "16121"
+                ticketsLink: "https://store.pfcsochi.ru/tickets/"
                 slots:
                   - slot: FARE_SLOT_OUT_D_MINUS_2
                     direction: FARE_DIRECTION_OUTBOUND
-                    date: "2026-02-25"
-                    prices: [2511]
+                    date: "2026-02-28"
+                    prices: []
+                    windowLevel: FARE_WINDOW_LEVEL_STRICT
                   - slot: FARE_SLOT_OUT_D_MINUS_1
                     direction: FARE_DIRECTION_OUTBOUND
-                    date: "2026-02-26"
-                    prices: [2854]
+                    date: "2026-03-01"
+                    prices: ["7278"]
+                    windowLevel: FARE_WINDOW_LEVEL_STRICT
                   - slot: FARE_SLOT_OUT_D0_ARRIVE_BY
                     direction: FARE_DIRECTION_OUTBOUND
-                    date: "2026-02-27"
-                    prices: [3276]
+                    date: "2026-03-02"
+                    prices: []
+                    windowLevel: FARE_WINDOW_LEVEL_SOFT_2
                   - slot: FARE_SLOT_RET_D0_DEPART_AFTER
                     direction: FARE_DIRECTION_RETURN
-                    date: "2026-02-27"
-                    prices: []
+                    date: "2026-03-02"
+                    prices: ["8796"]
+                    windowLevel: FARE_WINDOW_LEVEL_SOFT_2
                   - slot: FARE_SLOT_RET_D_PLUS_1
                     direction: FARE_DIRECTION_RETURN
-                    date: "2026-02-28"
-                    prices: [3354]
+                    date: "2026-03-03"
+                    prices: ["6308"]
+                    windowLevel: FARE_WINDOW_LEVEL_STRICT
                   - slot: FARE_SLOT_RET_D_PLUS_2
                     direction: FARE_DIRECTION_RETURN
-                    date: "2026-03-01"
-                    prices: [4480]
+                    date: "2026-03-04"
+                    prices: ["6653"]
+                    windowLevel: FARE_WINDOW_LEVEL_STRICT
         "400":
           description: Invalid request params
           content:
@@ -256,15 +389,6 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: "origin_iata must be 3 latin letters"
-          examples:
-            invalid_origin:
-              summary: Invalid IATA format
-              value:
-                error: "origin_iata must be 3 latin letters"
-            invalid_route:
-              summary: Same origin and destination
-              value:
-                error: "origin_iata and destination_iata must differ"
         "404":
           description: Match not found
           content:
@@ -292,12 +416,41 @@ paths:
 
 components:
   schemas:
+    Club:
+      type: object
+      properties:
+        club_id:
+          type: string
+        name_ru:
+          type: string
+        name_en:
+          type: string
+        logo:
+          type: string
+        city:
+          type: string
+        airport_iata:
+          type: string
+
+    GetClubsResponse:
+      type: object
+      required:
+        - clubs
+      properties:
+        clubs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Club"
+
     Match:
       type: object
       properties:
         match_id:
           type: string
         kickoff_utc:
+          type: string
+          format: date-time
+        kickoff_local:
           type: string
           format: date-time
         city:
@@ -310,6 +463,10 @@ components:
           type: string
         club_away_id:
           type: string
+        home_club:
+          $ref: "#/components/schemas/Club"
+        away_club:
+          $ref: "#/components/schemas/Club"
         tickets_link:
           type: string
           format: uri
@@ -368,6 +525,7 @@ components:
         - direction
         - date
         - prices
+        - windowLevel
       properties:
         slot:
           type: string
@@ -390,8 +548,13 @@ components:
         prices:
           type: array
           items:
-            type: integer
-            format: int64
+            type: string
+        windowLevel:
+          type: string
+          enum:
+            - FARE_WINDOW_LEVEL_STRICT
+            - FARE_WINDOW_LEVEL_SOFT_2
+            - FARE_WINDOW_LEVEL_SOFT_4
 
     UpcomingWithAirfareResponse:
       type: object
@@ -427,6 +590,21 @@ components:
         best_date:
           type: string
           format: date
+        best_outbound_price:
+          type: integer
+          format: int64
+          nullable: true
+        best_return_price:
+          type: integer
+          format: int64
+          nullable: true
+        best_return_date:
+          type: string
+          format: date
+        best_round_trip_price:
+          type: integer
+          format: int64
+          nullable: true
         airfare_error:
           type: string
 
