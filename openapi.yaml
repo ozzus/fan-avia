@@ -95,9 +95,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/GetMatchesErrorResponse"
               example:
                 error: "match adapter error"
+                errors:
+                  - match_id: 16114
+                    error: "match adapter error"
 
   /v1/matches/upcoming:
     get:
@@ -389,6 +392,14 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: "origin_iata must be 3 latin letters"
+        "502":
+          description: Upstream source error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "upstream error"
         "404":
           description: Match not found
           content:
@@ -497,6 +508,18 @@ components:
           format: int64
         error:
           type: string
+
+    GetMatchesErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchLoadError"
 
     GetAirfareByMatchResponse:
       type: object
