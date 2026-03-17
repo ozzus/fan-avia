@@ -62,10 +62,9 @@ services:
     ports:
       - "127.0.0.1:8081:8080"
     environment:
-      SWAGGER_JSON: /openapi.yaml
-    volumes:
-      - ./openapi.yaml:/openapi.yaml:ro
+      SWAGGER_JSON_URL: /docs/openapi.yaml
     depends_on:
       - api-gateway
+
 
 
