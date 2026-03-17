@@ -64,9 +64,8 @@ services:
     environment:
       SWAGGER_JSON: /openapi.yaml
     volumes:
-      - ./openapi.yaml:/usr/share/nginx/html/openapi.yaml:ro
+      - ./openapi.yaml:/openapi.yaml:ro
     depends_on:
       - api-gateway
-
 
 
