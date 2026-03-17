@@ -62,12 +62,11 @@ services:
     ports:
       - "127.0.0.1:8081:8080"
     environment:
-      BASE_URL: /docs
-      NGINX_ROOT: /usr/share/nginx/html
-      SWAGGER_JSON: /docs/openapi.yaml
+      SWAGGER_JSON: /openapi.yaml
     volumes:
       - ./openapi.yaml:/usr/share/nginx/html/openapi.yaml:ro
     depends_on:
       - api-gateway
+
 
 
